@@ -47,7 +47,7 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 
 - **Write a book, not a document.** Parts, chapters and scenes in one tree, with word counts and a daily goal.
 - **Write in peace.** Live Markdown, focus mode, themes, dictation and version history for each chapter.
-- **Keep your work.** Guest writing is saved in your browser; with an account (passkey or Google), books sync through your account and keep their history.
+- **Keep your work.** Guest writing is saved in your browser; with an account (passkey or Google), books sync through your account and keep their history. Connect Google Drive and each book is also kept as plain Markdown files in a Publishify folder in your own Drive.
 - **Write in your language.** Left-to-right and right-to-left scripts; the interface comes in several languages.
 - **Get it out.** Import DOCX, Markdown or text; export Word, EPUB, PDF or Markdown.
 - **Have it read.** The editorial board plugin reads the exported book in your own AI and gives evidence-linked notes.
@@ -73,8 +73,8 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 | Import and export (DOCX, Markdown, TXT; Word, EPUB, PDF) | Working; browser acceptance tests pending |
 | Passkey accounts, recovery and sessions | Working; device acceptance tests pending |
 | Sync, version history and conflict protection | Working; multi-device tests pending |
-| Google sign-in | Implemented |
-| Google Drive sync | Not yet |
+| Google sign-in | Working; first production sign-in on 19 November 2026 |
+| Google Drive sync | Working: books are saved as Markdown in a Publishify folder in the writer's own Drive (`drive.file` scope only) |
 | Public reading pages | Built; switched off |
 | Editorial review | Moved to the [board plugin](https://github.com/publishify/plugin); the editor itself reads nothing with a model |
 
