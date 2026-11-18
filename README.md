@@ -87,7 +87,7 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 | The board's server: sign-in, licences, role cards | `mcp.publishify.app` | `publishify/plugin-mcp` (private) |
 | The website | `publishify.app` | `publishify/site` (private) |
 
-Retired repositories, kept as archives: `publishify/platform` (where this editor was built, together with a server-side review service that was abandoned), [publishify/studio](https://github.com/publishify/studio) (the first editor), [publishify/masthead](https://github.com/publishify/masthead) (the first board plugin) and [publishify/website](https://github.com/publishify/website) (the plugin-only site).
+The earlier repositories (Studio, Masthead, the plugin-only website) were removed on 19 November 2026; `publishify/platform`, where this editor was built, is kept private as an archive.
 
 ## Repository layout
 
@@ -140,7 +140,7 @@ Production uses `--env production` after staging has been checked. Deploying nee
 
 ## History
 
-- **9–12 November 2026:** the first editor, Studio ([publishify/studio](https://github.com/publishify/studio)), and the first board plugin, Masthead.
+- **9–12 November 2026:** the first editor, Studio, and the first board plugin, Masthead.
 - **12–14 November 2026:** the editor was rebuilt in `publishify/platform` together with Board, a review service that read manuscripts with a model on Publishify's servers.
 - **14–18 November 2026:** Publishify was briefly only an editorial board plugin.
 - **18 November 2026:** the editor is the main product again. It moved here from `publishify/platform` (commit `cd73a7c`) without Board; the editorial board lives on as the plugin in your own AI.
