@@ -1,0 +1,262 @@
+import { DurableObject } from "cloudflare:workers";
+import type { Env, OutItem, SyncIn, SyncOut } from "./types";
+
+type Row = {
+  id: string;
+  kind: "part" | "chapter" | "scene";
+  title: string;
+  body: string;
+  deleted: number;
+  seq: number;
+};
+
+/**
+ * One Durable Object (SQLite) per book. The unit is the chapter: each chapter has a server sequence number (seq).
+ * The client reports which seq it last received the chapter at (baseSeq); if it differs, it is a conflict and
+ * both versions are kept ("conflicted copy"). No text is ever silently overwritten.
+ */
+export class BookDO extends DurableObject<Env> {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    ctx.blockConcurrencyWhile(async () => {
+      ctx.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS items (id TEXT PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, seq INTEGER NOT NULL);
+        CREATE INDEX IF NOT EXISTS items_seq ON items(seq);
+        CREATE TABLE IF NOT EXISTS versions (id INTEGER PRIMARY KEY AUTOINCREMENT, item_id TEXT NOT NULL, body TEXT NOT NULL, seq INTEGER NOT NULL, created INTEGER NOT NULL);
+        CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
+      `);
+    });
+  }
+
+  private num(k: string): number {
+    const r = this.ctx.storage.sql
+      .exec<{ v: string }>("SELECT v FROM meta WHERE k = ?", k)
+      .toArray()[0];
+    return r ? Number(r.v) : 0;
+  }
+  private put(k: string, v: string | number) {
+    this.ctx.storage.sql.exec(
+      "INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v",
+      k,
+      String(v),
+    );
+  }
+  private text(k: string): string | null {
+    return (
+      this.ctx.storage.sql
+        .exec<{ v: string }>("SELECT v FROM meta WHERE k = ?", k)
+        .toArray()[0]?.v ?? null
+    );
+  }
+
+  sync(input: SyncIn): SyncOut {
+    return this.ctx.storage.transactionSync(() => {
+      const sql = this.ctx.storage.sql;
+      let seq = this.num("seq");
+      const accepted: Record<string, number> = {};
+      const conflicts: { id: string; copyId: string }[] = [];
+      const forceSend = new Set<string>();
+
+      for (const it of input.items) {
+        const row = sql
+          .exec<Row>(
+            "SELECT id, kind, title, body, deleted, seq FROM items WHERE id = ?",
+            it.id,
+          )
+          .toArray()[0];
+        if (it.deleted) {
+          if (row && !row.deleted && row.seq <= it.baseSeq) {
+            sql.exec(
+              "UPDATE items SET deleted = 1, body = '', seq = ? WHERE id = ?",
+              ++seq,
+              it.id,
+            );
+            accepted[it.id] = seq;
+          } else if (row) {
+            forceSend.add(it.id); // newer on the server; deletion rejected, the current version goes back
+          }
+          continue;
+        }
+        if (!row) {
+          sql.exec(
+            "INSERT INTO items (id, kind, title, body, deleted, seq) VALUES (?, ?, ?, ?, 0, ?)",
+            it.id,
+            it.kind,
+            it.title,
+            it.body,
+            ++seq,
+          );
+          accepted[it.id] = seq;
+        } else if (
+          !row.deleted &&
+          row.body === it.body &&
+          row.title === it.title &&
+          row.kind === it.kind
+        ) {
+          accepted[it.id] = row.seq; // already the same
+        } else if (!row.deleted && row.seq === it.baseSeq) {
+          sql.exec(
+            "INSERT INTO versions (item_id,body,seq,created) VALUES (?,?,?,?)",
+            row.id,
+            row.body,
+            row.seq,
+            Date.now(),
+          );
+          sql.exec(
+            "DELETE FROM versions WHERE item_id = ? AND id NOT IN (SELECT id FROM versions WHERE item_id = ? ORDER BY id DESC LIMIT 100)",
+            row.id,
+            row.id,
+          );
+          sql.exec(
+            "UPDATE items SET title = ?, body = ?, kind = ?, seq = ? WHERE id = ?",
+            it.title,
+            it.body,
+            it.kind,
+            ++seq,
+            it.id,
+          );
+          accepted[it.id] = seq;
+        } else {
+          // Conflict: the server version stays and the client's text is stored as a new chapter.
+          const copyId = crypto.randomUUID();
+          // Because the chapter title is derived from the body, the copy is recognised by the __conflict__ marker in the title field.
+          const title =
+            it.kind === "part"
+              ? `${it.title} (\u00e7ak\u0131\u015fan kopya)`
+              : "__conflict__";
+          sql.exec(
+            "INSERT INTO items (id, kind, title, body, deleted, seq) VALUES (?, ?, ?, ?, 0, ?)",
+            copyId,
+            it.kind,
+            title,
+            it.body,
+            ++seq,
+          );
+          conflicts.push({ id: it.id, copyId });
+          forceSend.add(it.id);
+          forceSend.add(copyId);
+        }
+      }
+
+      let orderOut: string[] | null = null;
+      const metadataConflicts: string[] = [];
+      if (
+        input.order &&
+        this.num("order_seq") > input.cursor &&
+        this.text("order") !== JSON.stringify(input.order)
+      ) {
+        orderOut = JSON.parse(this.text("order") ?? "[]");
+        metadataConflicts.push("order");
+      } else if (input.order) {
+        this.put("order", JSON.stringify(input.order));
+        this.put("order_seq", ++seq);
+      } else if (this.num("order_seq") > input.cursor) {
+        orderOut = JSON.parse(this.text("order") ?? "[]") as string[];
+      }
+      let metaOut: {
+        title: string;
+        author: string;
+        genre?: string;
+        lang?: string;
+      } | null = null;
+      if (
+        input.meta &&
+        this.num("meta_seq") > input.cursor &&
+        this.text("meta") !== JSON.stringify(input.meta)
+      ) {
+        metaOut = JSON.parse(this.text("meta") ?? "null");
+        metadataConflicts.push("meta");
+      } else if (input.meta) {
+        this.put("meta", JSON.stringify(input.meta));
+        this.put("meta_seq", ++seq);
+      } else if (this.num("meta_seq") > input.cursor) {
+        metaOut = JSON.parse(this.text("meta") ?? "null") as {
+          title: string;
+          author: string;
+          genre?: string;
+          lang?: string;
+        } | null;
+      }
+      this.put("seq", seq);
+
+      const changed = sql
+        .exec<Row>(
+          "SELECT id, kind, title, body, deleted, seq FROM items WHERE seq > ?",
+          input.cursor,
+        )
+        .toArray();
+      const items: OutItem[] = [];
+      for (const r of changed) {
+        if (accepted[r.id] === r.seq && !forceSend.has(r.id)) continue; // the client's own write
+        items.push({
+          id: r.id,
+          kind: r.kind,
+          title: r.title,
+          body: r.body,
+          deleted: !!r.deleted,
+          seq: r.seq,
+        });
+      }
+      for (const id of forceSend) {
+        if (items.some((x) => x.id === id)) continue;
+        const r = sql
+          .exec<Row>(
+            "SELECT id, kind, title, body, deleted, seq FROM items WHERE id = ?",
+            id,
+          )
+          .toArray()[0];
+        if (r)
+          items.push({
+            id: r.id,
+            kind: r.kind,
+            title: r.title,
+            body: r.body,
+            deleted: !!r.deleted,
+            seq: r.seq,
+          });
+      }
+      return {
+        metadataConflicts,
+        cursor: seq,
+        items,
+        order: orderOut,
+        meta: metaOut,
+        accepted,
+        conflicts,
+      };
+    });
+  }
+
+  snapshot(bookId: string) {
+    const units = this.ctx.storage.sql
+      .exec<Row>(
+        "SELECT * FROM items WHERE deleted=0 AND kind <> 'part' ORDER BY seq",
+      )
+      .toArray()
+      .map((r) => ({ id: r.id, body: r.body, revision: r.seq }));
+    const order = JSON.parse(this.text("order") ?? "[]") as string[];
+    units.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    const meta = JSON.parse(this.text("meta") ?? "{}") as {
+      title?: string;
+      lang?: string;
+    };
+    return {
+      bookId,
+      title: meta.title ?? "",
+      language: meta.lang ?? "tr",
+      units,
+    };
+  }
+  history(itemId: string) {
+    return this.ctx.storage.sql
+      .exec<{
+        body: string;
+        seq: number;
+        created: number;
+      }>("SELECT body,seq,created FROM versions WHERE item_id=? ORDER BY id DESC LIMIT 100", itemId)
+      .toArray();
+  }
+  async wipe(): Promise<void> {
+    await this.ctx.storage.deleteAll();
+  }
+}

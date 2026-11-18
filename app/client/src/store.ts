@@ -1,0 +1,754 @@
+import { get, set } from "idb-keyval";
+import { createCoalescer, createWriter, workspaceKey } from "./persistence";
+import { create } from "zustand";
+import type { BookLang } from "./languages";
+import { type MediaRef, delBlob, newRef, putBlob, prepareCover } from "./media";
+import { templateById } from "./templates";
+
+export type Theme =
+  | "light"
+  | "dark"
+  | "sepia"
+  | "green"
+  | "pink"
+  | "night"
+  | "custom";
+import {
+  type Lang,
+  detectUiLang,
+  isUiLang,
+  langFromUrl,
+  t,
+  usesTurkishTemplates,
+} from "./i18n";
+export type { Lang };
+
+export interface Version {
+  t: number;
+  body: string;
+  label?: string;
+}
+export interface Item {
+  id: string;
+  kind: "part" | "chapter";
+  title: string; // section name; for chapters "__conflict__" = conflicted-copy marker, otherwise empty
+  body: string;
+  updated: number;
+  versions: Version[];
+  /** Last known sequence number on the server; undefined means never synced. */
+  seq?: number;
+  dirty?: boolean;
+  /** File link on Google Drive (only if Drive is connected). */
+  drive?: DriveLink;
+  /** The moment it was moved to the trash; if defined, the chapter is hidden but not deleted (until the user says "empty"). */
+  trashed?: number;
+  /** 2 = scene (under a chapter); undefined = chapter. A scene is also a document (kind "chapter"). */
+  level?: 2;
+  /** The chapter's narration (a single file). */
+  audio?: MediaRef;
+}
+export interface DriveLink {
+  fileId: string;
+  version: string;
+  hash: string;
+}
+export const CONFLICT = "__conflict__";
+/** Are there unsynced changes? (for old records without the field: yes if never synced) */
+export const isDirty = (i: Item) => i.dirty ?? i.seq === undefined;
+export type Genre = "roman" | "novella" | "hikaye" | "diger";
+/** Scene level exists only in fiction genres (novel, novella, short story). The structure of other genres will come later with genre modules. */
+export const hasScenes = (b: Pick<Book, "genre">) =>
+  (b.genre ?? "roman") !== "diger";
+export interface Book {
+  id: string;
+  genre?: Genre;
+  /** Writing language (direction, spell-check, export). Interface language if undefined. */
+  lang?: BookLang;
+  /** Hangi \u00f6rnek \u015fablondan ba\u015flat\u0131ld\u0131 (templates.ts). */
+  template?: string;
+  title: string;
+  author: string;
+  created: number;
+  items: Item[];
+  activeId: string;
+  /** Sync status (while an account is active). */
+  remote?: boolean;
+  cursor?: number;
+  syncConflict?: {
+    meta?: { title: string; author: string; genre?: Genre; lang?: BookLang };
+    order?: string[];
+  };
+  metaDirty?: boolean;
+  orderDirty?: boolean;
+  removed?: { id: string; seq: number }[];
+  /** The book folder on Google Drive and the kitap.json info. If metaHash is undefined: the Drive metadata is adopted. */
+  drive?: {
+    folderId: string;
+    metaFileId?: string;
+    metaVersion?: string;
+    metaHash?: string;
+  };
+  /** The moment it was moved to the trash (the book is hidden in the library, not deleted). */
+  trashed?: number;
+  cover?: MediaRef;
+}
+/** Chapters and parts that are not in the trash. */
+export const live = (b: Book): Item[] => b.items.filter((i) => !i.trashed);
+interface Settings {
+  theme: Theme;
+  lang: Lang;
+  focus: boolean;
+  typewriter: boolean;
+  dailyGoal: number;
+  fontSize: number;
+  customBg: string;
+  customInk: string;
+}
+interface Daily {
+  date: string;
+  words: number;
+}
+
+interface Persisted {
+  books: Book[];
+  activeBookId: string | null;
+  settings: Settings;
+  daily: Daily;
+  deletedBooks?: string[];
+  owner?: string | null;
+  driveTrash?: string[];
+}
+export type SyncStatus = "off" | "idle" | "syncing" | "error" | "offline";
+export interface Account {
+  id: string;
+  name: string;
+}
+interface State extends Persisted {
+  ready: boolean;
+  saving: boolean;
+  saveError: boolean;
+  account: Account | null;
+  sync: { status: SyncStatus; last: number | null };
+  remoteTick: number;
+  patch(fn: (s: State) => Partial<State>): void;
+  setAccount(a: Account | null): void;
+  init(): Promise<void>;
+  openBook(id: string | null): void;
+  addBook(templateId?: string): string;
+  updateBook(
+    id: string,
+    patch: Partial<Pick<Book, "title" | "author" | "genre" | "lang">>,
+  ): void;
+  setCover(bookId: string, file: File): Promise<void>;
+  removeCover(bookId: string): void;
+  setAudio(itemId: string, file: File): Promise<void>;
+  removeAudio(itemId: string): void;
+  trashBook(id: string): void;
+  restoreBook(id: string): void;
+  purgeBook(id: string): void;
+  emptyBookTrash(): void;
+  setActive(itemId: string): void;
+  addItem(kind: "part" | "chapter" | "scene"): void;
+  renameItem(id: string, title: string): void;
+  setLevel(id: string, scene: boolean): void;
+  trashItem(id: string): void;
+  restoreItem(id: string): void;
+  purgeItem(id: string): void;
+  emptyItemTrash(): void;
+  moveItem(id: string, beforeId: string | null): void;
+  setBody(id: string, body: string): void;
+  snapshot(id: string, label?: string): void;
+  restore(id: string, v: Version): void;
+  setSettings(patch: Partial<Settings>): void;
+}
+
+let KEY = workspaceKey(null);
+const writer = createWriter<Persisted>((key, value) => set(key, value));
+let saveGeneration = 0;
+
+const today = () => new Date().toISOString().slice(0, 10);
+const uid = () => crypto.randomUUID();
+
+export const wordCount = (s: string) =>
+  s.trim() === "" ? 0 : s.trim().split(/\s+/).length;
+
+export function titleOf(i: Item, fallback: string): string {
+  if (i.kind === "part") return i.title || fallback;
+  const line = i.body.split("\n").find((l) => l.trim() !== "") ?? "";
+  return line.replace(/^#+\s*/, "").trim() || fallback;
+}
+
+const mkItem = (kind: Item["kind"], title = "", body = ""): Item => ({
+  id: uid(),
+  kind,
+  title,
+  body,
+  updated: Date.now(),
+  versions: [],
+  dirty: true,
+});
+const mkBook = (title: string, lang: Lang): Book => {
+  const c = mkItem(
+    "chapter",
+    "",
+    lang === "tr"
+      ? "# Birinci b\u00f6l\u00fcm\n\nYazmaya ba\u015fla."
+      : lang === "en"
+        ? "# Chapter one\n\nStart writing."
+        : `# ${t(lang, "newChapter")}\n\n`,
+  );
+  return {
+    id: uid(),
+    title,
+    author: "",
+    genre: "roman",
+    created: Date.now(),
+    items: [c],
+    activeId: c.id,
+    metaDirty: true,
+    orderDirty: true,
+  };
+};
+
+const defaults: Persisted = {
+  books: [],
+  activeBookId: null,
+  deletedBooks: [],
+  owner: null,
+  driveTrash: [],
+  daily: { date: today(), words: 0 },
+  settings: {
+    theme: matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
+    lang: detectUiLang(navigator.language),
+    focus: false,
+    typewriter: false,
+    dailyGoal: 500,
+    fontSize: 20,
+    customBg: "#F4F0FF",
+    customInk: "#1C1530",
+  },
+};
+
+function persisted(s: State): Persisted {
+  const {
+    books,
+    activeBookId,
+    settings,
+    daily,
+    deletedBooks,
+    owner,
+    driveTrash,
+  } = s;
+  return {
+    books,
+    activeBookId,
+    settings,
+    daily,
+    deletedBooks,
+    owner,
+    driveTrash,
+  };
+}
+/** Typing coalesces into one local write per this window; leaving the page writes at once. */
+const SAVE_DELAY_MS = 600;
+function writeNow() {
+  const generation = ++saveGeneration;
+  void writer.save(KEY, persisted(useStore.getState())).then(
+    () => {
+      if (generation === saveGeneration)
+        useStore.setState({ saving: false, saveError: false });
+    },
+    () => {
+      if (generation === saveGeneration)
+        useStore.setState({ saving: false, saveError: true });
+    },
+  );
+}
+const localSave = createCoalescer(writeNow, SAVE_DELAY_MS);
+function persist(_get: () => State, set_: (p: Partial<State>) => void) {
+  set_({ saving: true, saveError: false });
+  localSave.request();
+}
+export const flushLocal = () => {
+  localSave.flush();
+  return writer.flush();
+};
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => void flushLocal());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") void flushLocal();
+  });
+}
+
+export const useStore = create<State>((setS, getS) => {
+  const mutate = (fn: (s: State) => Partial<State>) => {
+    setS(fn(getS()));
+    persist(getS, setS);
+  };
+  const withBook = (fn: (b: Book) => Book) =>
+    mutate((s) => ({
+      books: s.books.map((b) => (b.id === s.activeBookId ? fn(b) : b)),
+    }));
+
+  return {
+    ...defaults,
+    ready: false,
+    saving: false,
+    saveError: false,
+    account: null,
+    sync: { status: "off", last: null },
+    remoteTick: 0,
+    patch: (fn) => mutate(fn),
+    setAccount: (account) =>
+      setS({ account, sync: { status: account ? "idle" : "off", last: null } }),
+    async init() {
+      let saved: Persisted | undefined;
+      try {
+        saved = await get<Persisted>(KEY);
+      } catch {
+        /* IndexedDB unavailable */
+      }
+      const s = saved ?? defaults;
+      setS({
+        ...s,
+        deletedBooks: s.deletedBooks ?? [],
+        owner: s.owner ?? null,
+        driveTrash: s.driveTrash ?? [],
+        settings: {
+          ...defaults.settings,
+          ...s.settings,
+          theme:
+            s.settings.theme === "green"
+              ? "light"
+              : s.settings.theme === "night"
+                ? "dark"
+                : s.settings.theme,
+          lang: isUiLang(s.settings?.lang)
+            ? s.settings.lang
+            : defaults.settings.lang,
+        },
+        daily: s.daily.date === today() ? s.daily : { date: today(), words: 0 },
+        ready: true,
+      });
+      // A link from the site (?lang=tr) chooses the interface language once; then the URL is cleaned.
+      const fromLink = langFromUrl(location.search);
+      if (fromLink) {
+        if (getS().settings.lang !== fromLink)
+          mutate((st) => ({ settings: { ...st.settings, lang: fromLink } }));
+        const url = new URL(location.href);
+        url.searchParams.delete("lang");
+        history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+      }
+    },
+    openBook: (id) => mutate(() => ({ activeBookId: id })),
+    addBook(templateId) {
+      const lang = getS().settings.lang;
+      const b = mkBook(t0(lang), lang);
+      const tpl =
+        templateId && templateId !== "bos"
+          ? templateById(templateId)
+          : undefined;
+      if (tpl) {
+        const li = usesTurkishTemplates(lang) ? 0 : 1;
+        const items = tpl.items.map(
+          (sp): Item =>
+            sp.k === "part"
+              ? mkItem("part", sp.t[li])
+              : sp.k === "scene"
+                ? { ...mkItem("chapter", "", ""), level: 2 }
+                : mkItem("chapter", "", `# ${sp.t[li]}\n\n`),
+        );
+        b.items = items;
+        b.genre = tpl.genre;
+        b.template = tpl.id;
+        b.activeId = items.find((i) => i.kind === "chapter")?.id ?? "";
+      }
+      mutate((s) => ({ books: [b, ...s.books], activeBookId: b.id }));
+      return b.id;
+    },
+    updateBook: (id, patch) =>
+      mutate((s) => ({
+        books: s.books.map((b) =>
+          b.id === id ? { ...b, ...patch, metaDirty: true } : b,
+        ),
+      })),
+    async setCover(bookId, file) {
+      const blob = await prepareCover(file);
+      const ref = newRef(
+        blob,
+        `kapak.${blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg"}`,
+        { up: true },
+      );
+      await putBlob(ref.id, blob);
+      mutate((s) => ({
+        books: s.books.map((b) => {
+          if (b.id !== bookId) return b;
+          if (b.cover) void delBlob(b.cover.id);
+          // If Drive already has a cover, the same file is updated in place.
+          return {
+            ...b,
+            cover: {
+              ...ref,
+              ...(b.cover?.drive ? { drive: b.cover.drive } : {}),
+            },
+          };
+        }),
+      }));
+    },
+    removeCover: (bookId) =>
+      mutate((s) => {
+        const b = s.books.find((x) => x.id === bookId);
+        if (b?.cover) void delBlob(b.cover.id);
+        return {
+          books: s.books.map((x) =>
+            x.id === bookId ? { ...x, cover: undefined } : x,
+          ),
+          driveTrash: b?.cover?.drive
+            ? [...(s.driveTrash ?? []), b.cover.drive.fileId]
+            : s.driveTrash,
+        };
+      }),
+    async setAudio(itemId, file) {
+      const ref = newRef(file, file.name, { up: true });
+      await putBlob(ref.id, file);
+      mutate((s) => ({
+        books: s.books.map((b) =>
+          b.id !== s.activeBookId
+            ? b
+            : {
+                ...b,
+                items: b.items.map((i) => {
+                  if (i.id !== itemId) return i;
+                  if (i.audio) void delBlob(i.audio.id);
+                  return {
+                    ...i,
+                    audio: {
+                      ...ref,
+                      ...(i.audio?.drive ? { drive: i.audio.drive } : {}),
+                    },
+                  };
+                }),
+              },
+        ),
+      }));
+    },
+    removeAudio: (itemId) =>
+      mutate((s) => {
+        const b = s.books.find((x) => x.id === s.activeBookId);
+        const it = b?.items.find((i) => i.id === itemId);
+        if (it?.audio) void delBlob(it.audio.id);
+        return {
+          books: s.books.map((x) =>
+            x.id !== b?.id
+              ? x
+              : {
+                  ...x,
+                  items: x.items.map((i) =>
+                    i.id === itemId ? { ...i, audio: undefined } : i,
+                  ),
+                },
+          ),
+          driveTrash: it?.audio?.drive
+            ? [...(s.driveTrash ?? []), it.audio.drive.fileId]
+            : s.driveTrash,
+        };
+      }),
+    trashBook: (id) =>
+      mutate((s) => ({
+        books: s.books.map((b) =>
+          b.id === id ? { ...b, trashed: Date.now() } : b,
+        ),
+        activeBookId: s.activeBookId === id ? null : s.activeBookId,
+      })),
+    restoreBook: (id) =>
+      mutate((s) => ({
+        books: s.books.map((b) =>
+          b.id === id ? { ...b, trashed: undefined } : b,
+        ),
+      })),
+    purgeBook: (id) => mutate((s) => purgeBooks(s, [id])),
+    emptyBookTrash: () =>
+      mutate((s) =>
+        purgeBooks(
+          s,
+          s.books.filter((b) => b.trashed).map((b) => b.id),
+        ),
+      ),
+    setActive: (itemId) => withBook((b) => ({ ...b, activeId: itemId })),
+    addItem(kind) {
+      const lang = getS().settings.lang;
+      const it: Item =
+        kind === "part"
+          ? mkItem("part", t(lang, "newPart"))
+          : kind === "scene"
+            ? { ...mkItem("chapter", "", ""), level: 2 }
+            : mkItem(
+                "chapter",
+                "",
+                `# ${t(lang, "newChapter")}\n\n`,
+              );
+      withBook((b) => {
+        let items = [...b.items, it];
+        if (kind === "scene") {
+          // The scene is inserted right after the active chapter (and its scenes).
+          const idx = b.items.findIndex((i) => i.id === b.activeId);
+          let at = idx < 0 ? b.items.length : idx + 1;
+          while (at < b.items.length && b.items[at]!.level === 2) at++;
+          items = [...b.items.slice(0, at), it, ...b.items.slice(at)];
+        }
+        return {
+          ...b,
+          items,
+          orderDirty: true,
+          activeId: kind !== "part" ? it.id : b.activeId,
+        };
+      });
+    },
+    setLevel: (id, scene) =>
+      withBook((b) => ({
+        ...b,
+        items: b.items.map((i) =>
+          i.id === id && i.kind === "chapter"
+            ? { ...i, level: scene ? 2 : undefined, dirty: true }
+            : i,
+        ),
+        orderDirty: true,
+      })),
+    renameItem: (id, title) =>
+      withBook((b) => ({
+        ...b,
+        items: b.items.map((i) =>
+          i.id === id ? { ...i, title, dirty: true } : i,
+        ),
+      })),
+    trashItem: (id) =>
+      withBook((b) => {
+        const items = b.items.map((i) =>
+          i.id === id ? { ...i, trashed: Date.now() } : i,
+        );
+        if (!items.some((i) => i.kind === "chapter" && !i.trashed))
+          items.push(mkItem("chapter", "", "# \n\n"));
+        return {
+          ...b,
+          items,
+          activeId: validActive(items, b.activeId),
+          orderDirty: true,
+        };
+      }),
+    restoreItem: (id) =>
+      withBook((b) => ({
+        ...b,
+        items: b.items.map((i) =>
+          i.id === id ? { ...i, trashed: undefined } : i,
+        ),
+        orderDirty: true,
+      })),
+    purgeItem: (id) => mutate((s) => purgeItems(s, [id])),
+    emptyItemTrash: () =>
+      mutate((s) => {
+        const b = s.books.find((x) => x.id === s.activeBookId);
+        return b
+          ? purgeItems(
+              s,
+              b.items.filter((i) => i.trashed).map((i) => i.id),
+            )
+          : {};
+      }),
+    moveItem: (id, beforeId) =>
+      withBook((b) => {
+        const it = b.items.find((i) => i.id === id);
+        if (!it || id === beforeId) return b;
+        const rest = b.items.filter((i) => i.id !== id);
+        const at =
+          beforeId === null
+            ? rest.length
+            : rest.findIndex((i) => i.id === beforeId);
+        rest.splice(at < 0 ? rest.length : at, 0, it);
+        return { ...b, items: rest, orderDirty: true };
+      }),
+    setBody(id, body) {
+      const s = getS();
+      const book = s.books.find((b) => b.id === s.activeBookId);
+      const cur = book?.items.find((i) => i.id === id);
+      if (!cur || cur.body === body) return;
+      const delta = wordCount(body) - wordCount(cur.body);
+      const now = Date.now();
+      const last = cur.versions[0]?.t ?? 0;
+      const versions =
+        now - last > 5 * 60_000 && cur.body.trim() !== ""
+          ? [{ t: now, body: cur.body }, ...cur.versions].slice(0, 40)
+          : cur.versions;
+      const daily = {
+        date: today(),
+        words: Math.max(
+          0,
+          (s.daily.date === today() ? s.daily.words : 0) + delta,
+        ),
+      };
+      mutate(() => ({
+        daily,
+        books: s.books.map((b) =>
+          b.id === s.activeBookId
+            ? {
+                ...b,
+                items: b.items.map((i) =>
+                  i.id === id
+                    ? { ...i, body, updated: now, versions, dirty: true }
+                    : i,
+                ),
+              }
+            : b,
+        ),
+      }));
+    },
+    snapshot: (id, label) =>
+      withBook((b) => ({
+        ...b,
+        items: b.items.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                versions: [
+                  { t: Date.now(), body: i.body, label },
+                  ...i.versions,
+                ].slice(0, 40),
+              }
+            : i,
+        ),
+      })),
+    restore: (id, v) =>
+      withBook((b) => ({
+        ...b,
+        items: b.items.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                body: v.body,
+                updated: Date.now(),
+                dirty: true,
+                versions: [
+                  { t: Date.now(), body: i.body, label: "restore" },
+                  ...i.versions,
+                ].slice(0, 40),
+              }
+            : i,
+        ),
+      })),
+    setSettings: (patch) =>
+      mutate((s) => ({ settings: { ...s.settings, ...patch } })),
+  };
+});
+
+const validActive = (items: Item[], activeId: string) =>
+  items.some((i) => i.id === activeId && i.kind === "chapter" && !i.trashed)
+    ? activeId
+    : (items.find((i) => i.kind === "chapter" && !i.trashed)?.id ?? "");
+
+/** Permanent delete: the deletion is sent to the server, Drive files are moved to the Drive trash. */
+function purgeItems(s: State, ids: string[]): Partial<State> {
+  const b = s.books.find((x) => x.id === s.activeBookId);
+  if (!b || !ids.length) return {};
+  const gone = b.items.filter((i) => ids.includes(i.id));
+  for (const i of gone) if (i.audio) void delBlob(i.audio.id);
+  const removed = [
+    ...(b.removed ?? []),
+    ...gone
+      .filter((i) => i.seq !== undefined)
+      .map((i) => ({ id: i.id, seq: i.seq! })),
+  ];
+  const items = b.items.filter((i) => !ids.includes(i.id));
+  if (!items.some((i) => i.kind === "chapter" && !i.trashed))
+    items.push(mkItem("chapter", "", "# \n\n"));
+  return {
+    books: s.books.map((x) =>
+      x.id === b.id
+        ? {
+            ...b,
+            items,
+            activeId: validActive(items, b.activeId),
+            removed,
+            orderDirty: true,
+          }
+        : x,
+    ),
+    driveTrash: [
+      ...(s.driveTrash ?? []),
+      ...gone.flatMap((i) => [
+        ...(i.drive ? [i.drive.fileId] : []),
+        ...(i.audio?.drive ? [i.audio.drive.fileId] : []),
+      ]),
+    ],
+  };
+}
+function purgeBooks(s: State, ids: string[]): Partial<State> {
+  const gone = s.books.filter((b) => ids.includes(b.id));
+  for (const b of gone) {
+    if (b.cover) void delBlob(b.cover.id);
+    for (const i of b.items) if (i.audio) void delBlob(i.audio.id);
+  }
+  return {
+    books: s.books.filter((b) => !ids.includes(b.id)),
+    activeBookId:
+      s.activeBookId && ids.includes(s.activeBookId) ? null : s.activeBookId,
+    deletedBooks: [
+      ...(s.deletedBooks ?? []),
+      ...gone.filter((b) => b.remote).map((b) => b.id),
+    ],
+    // The Drive folder is not permanently deleted; it goes to the Drive trash (recoverable for 30 days).
+    driveTrash: [
+      ...(s.driveTrash ?? []),
+      ...gone.flatMap((b) => (b.drive ? [b.drive.folderId] : [])),
+    ],
+  };
+}
+
+const t0 = (lang: Lang) => t(lang, "untitledBook");
+export const activeBook = (s: State) =>
+  s.books.find((b) => b.id === s.activeBookId);
+
+let switching = Promise.resolve();
+let workspaceEpoch = 0;
+export const getWorkspaceEpoch = () => workspaceEpoch;
+/** Guest/account libraries never migrate implicitly; a failed switch keeps the old scope. */
+export function switchWorkspace(account: Account | null): Promise<void> {
+  const task = switching
+    .catch(() => {})
+    .then(async () => {
+      const current = useStore.getState();
+      if (current.owner === (account?.id ?? null)) {
+        current.setAccount(account);
+        return;
+      }
+      ++workspaceEpoch;
+      useStore.setState({ ready: false });
+      try {
+        localSave.flush();
+        await writer.save(KEY, persisted(current));
+        const nextKey = workspaceKey(account?.id ?? null);
+        const saved = await get<Persisted>(nextKey);
+        KEY = nextKey;
+        ++saveGeneration;
+        const next = saved ?? { ...defaults, settings: current.settings };
+        useStore.setState({
+          ...next,
+          owner: account?.id ?? null,
+          account,
+          books: next.books ?? [],
+          deletedBooks: next.deletedBooks ?? [],
+          driveTrash: next.driveTrash ?? [],
+          ready: true,
+          saving: false,
+          saveError: false,
+          remoteTick: current.remoteTick + 1,
+          sync: { status: account ? "idle" : "off", last: null },
+        });
+      } catch (error) {
+        useStore.setState({ ready: true, saveError: true });
+        throw error;
+      }
+    });
+  switching = task;
+  return task;
+}

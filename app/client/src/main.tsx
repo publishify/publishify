@@ -1,0 +1,30 @@
+// After a new release, an open page may ask for a code chunk that no longer exists.
+// Reload to pick up the new release instead of showing an empty page; at most once a minute,
+// so a chunk that is really missing cannot cause a reload loop.
+window.addEventListener("vite:preloadError", (event) => {
+  const key = "publishify:reloaded-for-release";
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(key) ?? 0) < 60_000) return;
+    sessionStorage.setItem(key, String(Date.now()));
+  } catch {
+    return;
+  }
+  event.preventDefault();
+  location.reload();
+});
+if (import.meta.env.DEV && location.search.includes("demo"))
+  await import("./dev/demo");
+// In development, ?mockdrive loads a fake Drive (src/dev/mock-drive.ts).
+if (import.meta.env.DEV && location.search.includes("mockdrive"))
+  await import("./dev/mock-drive");
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { App } from "./App";
+import "./styles.css";
+import "./workspace.css";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
