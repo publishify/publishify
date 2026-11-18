@@ -12,7 +12,7 @@ export function BoardPanel() {
     <>
       <h3>{t.title}</h3>
       <p>{t.intro}</p>
-      <ol>
+      <ol style={{ listStyle: "decimal", paddingLeft: "1.3em" }}>
         <li>{t.step1}</li>
         <li>{t.step2}</li>
         <li>{t.step3}</li>
