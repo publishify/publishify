@@ -1,6 +1,6 @@
 # Publishify
 
-The Publishify writing editor: one Cloudflare Worker (`app/api`) that serves the React client (`app/client`) at `write.publishify.app` (production) and `staging.publishify.app` (staging). It moved here from `publishify/platform` on 2026-11-18; the server-side Board was left behind and abandoned. The editorial board is now a separate plugin that runs in the writer's own AI (`publishify/aiplugin`); this editor never sends a manuscript to a model.
+The Publishify writing editor: one Cloudflare Worker (`app/api`) that serves the React client (`app/client`) at `write.publishify.app` (production) and `staging.publishify.app` (staging). It moved here from `publishify/platform` on 2026-11-18; the server-side Board was left behind and abandoned. The editorial board is now a separate plugin that runs in the writer's own AI (`publishify/plugin`); this editor never sends a manuscript to a model.
 
 ## Commands
 - Install: `pnpm install`

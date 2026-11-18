@@ -15,7 +15,7 @@
   <a href="https://write.publishify.app/"><strong>Start writing</strong></a> ·
   <a href="https://site.publishify.app/">Website (preview)</a> ·
   <a href="https://site.publishify.app/tr/">Türkçe</a> ·
-  <a href="https://github.com/publishify/aiplugin">Editorial board plugin</a>
+  <a href="https://github.com/publishify/plugin">Editorial board plugin</a>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 **Publishify is a writing editor for books.** It runs in the browser with nothing to install, and you can start writing without an account. You plan a book as **parts › chapters › scenes**, write in a quiet editor where Markdown formats itself, and export the book as Word, EPUB, PDF or Markdown when it is ready for a publisher or a store.
 
-When you want another pair of eyes, the **Publishify editorial board** reads your book. The board is a separate plugin that runs inside your own AI application (Claude first): an Editor, a Continuity Checker, a panel of three readers and an Editor-in-Chief give quote-backed notes and a dashboard with the Wayfarer's Seven Stages map. Your manuscript never goes to Publishify's servers for that; see [publishify/aiplugin](https://github.com/publishify/aiplugin).
+When you want another pair of eyes, the **Publishify editorial board** reads your book. The board is a separate plugin that runs inside your own AI application (Claude first): an Editor, a Continuity Checker, a panel of three readers and an Editor-in-Chief give quote-backed notes and a dashboard with the Wayfarer's Seven Stages map. Your manuscript never goes to Publishify's servers for that; see [publishify/plugin](https://github.com/publishify/plugin).
 
 This repository is the editor: its browser client and the Cloudflare Worker behind it.
 
@@ -64,15 +64,15 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 | Google sign-in | Implemented |
 | Google Drive sync | Not yet |
 | Public reading pages | Built; switched off |
-| Editorial review | Moved to the [board plugin](https://github.com/publishify/aiplugin); the editor itself reads nothing with a model |
+| Editorial review | Moved to the [board plugin](https://github.com/publishify/plugin); the editor itself reads nothing with a model |
 
 ## How Publishify fits together
 
 | What | Where | Repository |
 | --- | --- | --- |
 | The writing editor (this repository) | `write.publishify.app`, `staging.publishify.app` | [publishify/publishify](https://github.com/publishify/publishify) (public) |
-| The editorial board plugin | Installed in your AI application | [publishify/aiplugin](https://github.com/publishify/aiplugin) (public) |
-| The board's server: sign-in, licences, role cards | `mcp.publishify.app` | `publishify/aiplugin-mcp` (private) |
+| The editorial board plugin | Installed in your AI application | [publishify/plugin](https://github.com/publishify/plugin) (public) |
+| The board's server: sign-in, licences, role cards | `mcp.publishify.app` | `publishify/plugin-mcp` (private) |
 | The website | `publishify.app`, preview at `site.publishify.app` | `publishify/site` |
 
 Retired repositories, kept as archives: [publishify/platform](https://github.com/publishify/platform) (where this editor was built, together with a server-side review service that was abandoned), [publishify/studio](https://github.com/publishify/studio) (the first editor), [publishify/masthead](https://github.com/publishify/masthead) (the first board plugin) and [publishify/website](https://github.com/publishify/website) (the plugin-only site).
@@ -139,7 +139,7 @@ Production uses `--env production` after staging has been checked. Deploying nee
 
 Kitabına bir de kurul baksın istediğinde, **Publishify yayın kurulu** devreye girer: kendi yapay zekânda (önce Claude) çalışan ayrı bir eklentidir. Editör, Süreklilik denetçisi, üç kişilik Okur Paneli ve Yayın yönetmeni alıntıya dayalı notlar ve Yolcunun Yedi Merhalesi haritasıyla bir pano verir. Kitabın bunun için Publishify sunucularına gitmez.
 
-[Yazmaya başla](https://write.publishify.app/?lang=tr) · [Türkçe site (önizleme)](https://site.publishify.app/tr/) · [Yayın kurulu eklentisi](https://github.com/publishify/aiplugin)
+[Yazmaya başla](https://write.publishify.app/?lang=tr) · [Türkçe site (önizleme)](https://site.publishify.app/tr/) · [Yayın kurulu eklentisi](https://github.com/publishify/plugin)
 
 ## Licence and contact
 

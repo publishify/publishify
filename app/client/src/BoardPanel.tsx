@@ -2,7 +2,7 @@ import { copyLang } from "./i18n/fallback";
 import { pluginCopy } from "./i18n/plugin";
 import { useStore } from "./store";
 
-const PLUGIN_URL = "https://github.com/publishify/aiplugin";
+const PLUGIN_URL = "https://github.com/publishify/plugin";
 
 /** The editorial board lives in the writer's own AI now; this tab says how to reach it. */
 export function BoardPanel() {
