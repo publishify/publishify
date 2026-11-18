@@ -13,8 +13,8 @@
 
 <p align="center">
   <a href="https://write.publishify.app/"><strong>Start writing</strong></a> ·
-  <a href="https://site.publishify.app/">Website (preview)</a> ·
-  <a href="https://site.publishify.app/tr/">Türkçe</a> ·
+  <a href="https://publishify.app/">Website</a> ·
+  <a href="https://publishify.app/tr/">Türkçe</a> ·
   <a href="https://github.com/publishify/plugin">Editorial board plugin</a>
 </p>
 
@@ -73,7 +73,7 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 | The writing editor (this repository) | `write.publishify.app`, `staging.publishify.app` | [publishify/publishify](https://github.com/publishify/publishify) (public) |
 | The editorial board plugin | Installed in your AI application | [publishify/plugin](https://github.com/publishify/plugin) (public) |
 | The board's server: sign-in, licences, role cards | `mcp.publishify.app` | `publishify/plugin-mcp` (private) |
-| The website | `publishify.app`, preview at `site.publishify.app` | `publishify/site` |
+| The website | `publishify.app` | `publishify/site` |
 
 Retired repositories, kept as archives: [publishify/platform](https://github.com/publishify/platform) (where this editor was built, together with a server-side review service that was abandoned), [publishify/studio](https://github.com/publishify/studio) (the first editor), [publishify/masthead](https://github.com/publishify/masthead) (the first board plugin) and [publishify/website](https://github.com/publishify/website) (the plugin-only site).
 
@@ -139,7 +139,7 @@ Production uses `--env production` after staging has been checked. Deploying nee
 
 Kitabına bir de kurul baksın istediğinde, **Publishify yayın kurulu** devreye girer: kendi yapay zekânda (önce Claude) çalışan ayrı bir eklentidir. Editör, Süreklilik denetçisi, üç kişilik Okur Paneli ve Yayın yönetmeni alıntıya dayalı notlar ve Yolcunun Yedi Merhalesi haritasıyla bir pano verir. Kitabın bunun için Publishify sunucularına gitmez.
 
-[Yazmaya başla](https://write.publishify.app/?lang=tr) · [Türkçe site (önizleme)](https://site.publishify.app/tr/) · [Yayın kurulu eklentisi](https://github.com/publishify/plugin)
+[Yazmaya başla](https://write.publishify.app/?lang=tr) · [Türkçe site](https://publishify.app/tr/) · [Yayın kurulu eklentisi](https://github.com/publishify/plugin)
 
 ## Licence and contact
 
