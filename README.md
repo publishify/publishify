@@ -15,7 +15,8 @@
   <a href="https://write.publishify.app/"><strong>Start writing</strong></a> ·
   <a href="https://publishify.app/">Website</a> ·
   <a href="https://publishify.app/tr/">Türkçe</a> ·
-  <a href="https://github.com/publishify/plugin">Editorial board plugin</a>
+  <a href="https://github.com/publishify/plugin">Editorial board plugin</a> ·
+  <a href="https://publishify.app/sample-report/">Sample report</a>
 </p>
 
 <p align="center">
@@ -51,6 +52,17 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 - **Get it out.** Import DOCX, Markdown or text; export Word, EPUB, PDF or Markdown.
 - **Have it read.** The editorial board plugin reads the exported book in your own AI and gives evidence-linked notes.
 
+<table>
+  <tr>
+    <td width="50%"><img src="https://publishify.app/img/zen-dark-1600.jpg" alt="Writing mode: full screen, only the current paragraph in focus"><br><sub><b>Writing mode.</b> Full screen, only you and the page.</sub></td>
+    <td width="50%"><img src="https://publishify.app/img/templates-1400.jpg" alt="Book templates by genre"><br><sub><b>Templates.</b> Start a novel, a story collection or an essay with its structure in place.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="https://publishify.app/img/rtl-ar-1600.jpg" alt="Right-to-left writing in Arabic"><br><sub><b>Every direction.</b> Right-to-left scripts such as Arabic and Ottoman Turkish.</sub></td>
+    <td width="50%"><img src="https://publishify.app/img/masthead-night-press-en.svg" alt="Illustration of the Publishify editorial board and the Seven Stages ring"><br><sub><b>An editorial board.</b> The plugin reads your book in your own AI. Illustration with sample data.</sub></td>
+  </tr>
+</table>
+
 ## Status
 
 18 November 2026. The editor is live at [write.publishify.app](https://write.publishify.app/); [staging.publishify.app](https://staging.publishify.app/) runs the same code against separate test data.
@@ -73,9 +85,9 @@ This repository is the editor: its browser client and the Cloudflare Worker behi
 | The writing editor (this repository) | `write.publishify.app`, `staging.publishify.app` | [publishify/publishify](https://github.com/publishify/publishify) (public) |
 | The editorial board plugin | Installed in your AI application | [publishify/plugin](https://github.com/publishify/plugin) (public) |
 | The board's server: sign-in, licences, role cards | `mcp.publishify.app` | `publishify/plugin-mcp` (private) |
-| The website | `publishify.app` | `publishify/site` |
+| The website | `publishify.app` | `publishify/site` (private) |
 
-Retired repositories, kept as archives: [publishify/platform](https://github.com/publishify/platform) (where this editor was built, together with a server-side review service that was abandoned), [publishify/studio](https://github.com/publishify/studio) (the first editor), [publishify/masthead](https://github.com/publishify/masthead) (the first board plugin) and [publishify/website](https://github.com/publishify/website) (the plugin-only site).
+Retired repositories, kept as archives: `publishify/platform` (where this editor was built, together with a server-side review service that was abandoned), [publishify/studio](https://github.com/publishify/studio) (the first editor), [publishify/masthead](https://github.com/publishify/masthead) (the first board plugin) and [publishify/website](https://github.com/publishify/website) (the plugin-only site).
 
 ## Repository layout
 
@@ -129,7 +141,7 @@ Production uses `--env production` after staging has been checked. Deploying nee
 ## History
 
 - **9–12 November 2026:** the first editor, Studio ([publishify/studio](https://github.com/publishify/studio)), and the first board plugin, Masthead.
-- **12–14 November 2026:** the editor was rebuilt in [publishify/platform](https://github.com/publishify/platform) together with Board, a review service that read manuscripts with a model on Publishify's servers.
+- **12–14 November 2026:** the editor was rebuilt in `publishify/platform` together with Board, a review service that read manuscripts with a model on Publishify's servers.
 - **14–18 November 2026:** Publishify was briefly only an editorial board plugin.
 - **18 November 2026:** the editor is the main product again. It moved here from `publishify/platform` (commit `cd73a7c`) without Board; the editorial board lives on as the plugin in your own AI.
 
