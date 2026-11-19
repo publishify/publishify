@@ -1,11 +1,11 @@
+/** The wordmark, drawn in the current text colour (a soft tint of it) so it suits every theme. */
 export function Logo({ height = 20 }: { height?: number }) {
   return (
-    <img
+    <span
       className="wordmark"
-      src="/brand-logo.svg"
-      alt="Publishify"
-      height={height}
-      width={(height * 216.04) / 40.16}
+      role="img"
+      aria-label="Publishify"
+      style={{ height, width: (height * 216.04) / 40.16 }}
     />
   );
 }

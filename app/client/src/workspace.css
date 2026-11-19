@@ -839,3 +839,33 @@ html.mac-desktop .drag-strip {
   backdrop-filter: blur(12px);
 }
 html.mac-desktop .workspace-library { padding-top: 56px; }
+
+/* ── Theme-aware details ───────────────────────────────────────────────────────── */
+.wordmark,
+.workspace-header .wordmark {
+  display: block;
+  flex: none;
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  -webkit-mask: url(/brand-logo.svg) no-repeat center / contain;
+  mask: url(/brand-logo.svg) no-repeat center / contain;
+}
+.sb-head { display: flex; align-items: center; gap: 6px; }
+.sb-head .bookpick { flex: 1; min-width: 0; margin: 0; }
+
+/* Covers take their colour from the theme: each keeps its own hue, tinted by the theme's accent. */
+.workspace-library .cover { --cover: #294b3b; }
+.sample-0 .sample-cover { --cover: #193a31; }
+.sample-1 .sample-cover { --cover: #6d5540; }
+.sample-2 .sample-cover { --cover: #607254; }
+.sample-3 .sample-cover { --cover: #293c4a; }
+.sample-4 .sample-cover { --cover: #423d2a; }
+.workspace-library .cover:not(.has-img),
+.sample-library .sample-cover {
+  background: linear-gradient(130deg,
+    color-mix(in oklab, var(--cover) 72%, var(--accent)),
+    color-mix(in oklab, var(--cover) 70%, black));
+  border-color: color-mix(in oklab, var(--cover) 55%, var(--accent));
+}
+.workspace-library .cover { border-left-color: color-mix(in oklab, var(--cover) 50%, var(--accent)); }
+.workspace-library .cover:before,
+.sample-cover:before { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }

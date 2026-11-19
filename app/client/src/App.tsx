@@ -192,9 +192,13 @@ export function App() {
       {acct && <AccountDialog lang={lang} onClose={() => setAcct(false)} />}
       {!acct && <DesktopApprove lang={lang} onSignIn={() => setAcct(true)} />}
       <header className="titlebar" data-tauri-drag-region>
-        <button className="btn library-nav" onClick={() => s.openBook(null)}>
-          <LibraryIcon size={17} aria-hidden="true" />
-          {t(lang, "library")}
+        <button
+          className="icon"
+          title={`${t(lang, "library")} (⌘⇧L)`}
+          aria-label={t(lang, "library")}
+          onClick={() => s.openBook(null)}
+        >
+          <LibraryIcon />
         </button>
         <button
           className="icon"

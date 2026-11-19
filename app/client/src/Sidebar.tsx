@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookDialog } from "./BookDialog";
-import { Logo } from "./Logo";
 import { NewBookDialog } from "./NewBookDialog";
 import { type Lang, t } from "./i18n";
 import { ItemTrash } from "./Trash";
@@ -133,19 +132,18 @@ export function Sidebar({
         <NewBookDialog lang={lang} onClose={() => setNewBook(false)} />
       )}
       <div className="sb-head">
-        <Logo height={18} />
-        <span className="spacer" />
+        <button className="bookpick" onClick={() => setPick((p) => !p)}>
+          <BookOpen /> <span>{cur?.title}</span> <ChevronDown />
+        </button>
         <button
           className="icon"
           title={t(lang, "editBook")}
+          aria-label={t(lang, "editBook")}
           onClick={() => setEdit(true)}
         >
           <Pencil />
         </button>
       </div>
-      <button className="bookpick" onClick={() => setPick((p) => !p)}>
-        <BookOpen /> <span>{cur?.title}</span> <ChevronDown />
-      </button>
       {pick && (
         <div className="bookmenu">
           {books.map((b) => (
