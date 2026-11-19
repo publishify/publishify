@@ -407,8 +407,6 @@ app.delete("/api/publish/:id", requireUser, async (c) => {
   return c.json({ ok: true });
 });
 
-app.use("/api/plan", requireUser);
-
 app.notFound((c) =>
   c.json({ error: { code: "not_found", message: "Not found." } }, 404),
 );

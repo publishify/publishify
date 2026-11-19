@@ -10,8 +10,6 @@ export interface Env {
   /** OAuth client used for Sign in with Google (public, not a secret). */
   GOOGLE_CLIENT_ID?: string;
   PUBLIC_PAGES_ENABLED?: string;
-  LEMON_WEBHOOK_SECRET?: string;
-  LEMON_VARIANT_ID?: string;
   BOOKS: DurableObjectNamespace<BookDO>;
   ASSETS: Fetcher;
 }

@@ -1,6 +1,5 @@
 import { copyLang } from "./i18n/fallback";
-import { boardCopy } from "./i18n/board";
-import type { ReviewNote } from "@publishify/contracts";
+import { syncCopy } from "./i18n/sync";
 import type { EditorView } from "@codemirror/view";
 import {
   Download,
@@ -42,7 +41,6 @@ export function App() {
   const book = useStore(activeBook);
   const { lang, theme, focus, typewriter, fontSize, customBg, customInk } =
     s.settings;
-  const pendingNote = useRef<ReviewNote | null>(null);
   const view = useRef<EditorView | null>(null);
   const [panel, setPanel] = useState<PanelKind | null>(null);
   const [sidebar, setSidebar] = useState(wide);
@@ -272,7 +270,7 @@ export function App() {
 
       {book.syncConflict && (
         <div role="alert" className="card">
-          {boardCopy[copyLang(lang, boardCopy)].conflict}
+          {syncCopy[copyLang(lang, syncCopy)].conflict}
           <button
             className="btn"
             onClick={() =>
@@ -300,7 +298,7 @@ export function App() {
               }))
             }
           >
-            {boardCopy[copyLang(lang, boardCopy)].keepLocal}
+            {syncCopy[copyLang(lang, syncCopy)].keepLocal}
           </button>
           <button
             className="btn"
@@ -312,7 +310,7 @@ export function App() {
               }))
             }
           >
-            {boardCopy[copyLang(lang, boardCopy)].keepRemote}
+            {syncCopy[copyLang(lang, syncCopy)].keepRemote}
           </button>
         </div>
       )}
@@ -336,26 +334,6 @@ export function App() {
               onChange={(text) => s.setBody(item.id, text)}
               onView={(v) => {
                 view.current = v;
-                if (v && pendingNote.current) {
-                  const e = pendingNote.current.evidence[0];
-                  pendingNote.current = null;
-                  if (e) {
-                    const text = v.state.doc.toString();
-                    const start = text.indexOf(e.quote);
-                    if (start >= 0 && text.indexOf(e.quote, start + 1) < 0) {
-                      v.dispatch({
-                        selection: {
-                          anchor: start,
-                          head: start + e.quote.length,
-                        },
-                        scrollIntoView: true,
-                      });
-                      v.focus();
-                    } else {
-                      flash(boardCopy[copyLang(lang, boardCopy)].changed);
-                    }
-                  }
-                }
               }}
             />
           </Suspense>

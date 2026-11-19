@@ -8,7 +8,7 @@ import {
   uiLangs,
 } from "../i18n";
 import { ku } from "../i18n/ku";
-import { boardCopy } from "../i18n/board";
+import { syncCopy } from "../i18n/sync";
 import { importCopy } from "../i18n/import";
 import { publishingCopy } from "../i18n/publishing";
 import { workspaceCopy } from "../i18n/workspace";
@@ -36,7 +36,7 @@ describe("interface languages", () => {
       Object.entries(o).flatMap(([k, v]) =>
         v && typeof v === "object" ? shape(v).map((x) => `${k}.${x}`) : [k],
       );
-    for (const copy of [boardCopy, importCopy, publishingCopy, workspaceCopy])
+    for (const copy of [syncCopy, importCopy, publishingCopy, workspaceCopy])
       for (const l of ["ar", "ota", "ku", "de", "fr", "ru", "ja"] as const)
         expect(shape(copy[l]).sort(), l).toEqual(shape(copy.en).sort());
   });
