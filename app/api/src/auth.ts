@@ -65,7 +65,7 @@ export function rp(c: C): { rpID: string; origin: string } | null {
   return { rpID, origin: url.origin };
 }
 
-async function startSession(c: C, userId: string): Promise<void> {
+async function newSession(c: C, userId: string): Promise<string> {
   const token = randomToken();
   const expires = Date.now() + SESSION_DAYS * 86_400_000;
   await c.env.DB.prepare(
@@ -73,6 +73,11 @@ async function startSession(c: C, userId: string): Promise<void> {
   )
     .bind(await sha256(token), userId, expires)
     .run();
+  return token;
+}
+
+async function startSession(c: C, userId: string): Promise<void> {
+  const token = await newSession(c, userId);
   setCookie(c, "pf_session", token, {
     httpOnly: true,
     secure: new URL(c.req.url).protocol === "https:",
@@ -82,10 +87,14 @@ async function startSession(c: C, userId: string): Promise<void> {
   });
 }
 
+/** The desktop app sends its session as a bearer token instead of a cookie. */
+export const bearer = (c: C): string | undefined =>
+  /^Bearer ([\w-]{20,})$/.exec(c.req.header("authorization") ?? "")?.[1];
+
 export async function currentUser(
   c: C,
 ): Promise<{ id: string; name: string } | null> {
-  const token = getCookie(c, "pf_session");
+  const token = bearer(c) ?? getCookie(c, "pf_session");
   if (!token) return null;
   const row = await c.env.DB.prepare(
     "SELECT u.id, u.name FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires > ?",
@@ -330,7 +339,7 @@ export async function passkeyVerify(c: C, response: RegistrationResponseJSON) {
 }
 
 export async function logout(c: C) {
-  const token = getCookie(c, "pf_session");
+  const token = bearer(c) ?? getCookie(c, "pf_session");
   if (token)
     await c.env.DB.prepare("DELETE FROM sessions WHERE id_hash = ?")
       .bind(await sha256(token))
@@ -386,4 +395,29 @@ export async function googleLogin(c: C, credential: string) {
   ]);
   await startSession(c, userId);
   return c.json({ user: { id: userId, name }, recoveryCode: code });
+}
+
+/**
+ * Desktop sign-in, step 1: the writer is signed in on the web and approves the desktop app.
+ * Returns a one-time code bound to the app's PKCE challenge (S256), valid for five minutes.
+ */
+export async function desktopCode(c: C, userId: string, challenge: string): Promise<string> {
+  const id = randomToken(24);
+  await c.env.DB.prepare(
+    "INSERT INTO challenges (id, challenge, kind, user_id, name, expires) VALUES (?, ?, 'desktop', ?, NULL, ?)",
+  )
+    .bind(await sha256(id), challenge, userId, Date.now() + CHALLENGE_MS)
+    .run();
+  return id;
+}
+
+/** Desktop sign-in, step 2: the app trades the code and its verifier for a session token. */
+export async function desktopToken(c: C, code: string, verifier: string): Promise<string | null> {
+  const row = await c.env.DB.prepare(
+    "DELETE FROM challenges WHERE id = ? AND kind = 'desktop' AND expires > ? RETURNING challenge, user_id",
+  )
+    .bind(await sha256(code), Date.now())
+    .first<{ challenge: string; user_id: string | null }>();
+  if (!row?.user_id || (await sha256(verifier)) !== row.challenge) return null;
+  return newSession(c, row.user_id);
 }

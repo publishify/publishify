@@ -1,3 +1,4 @@
+import { API_ORIGIN, desktopToken, tauri } from "./desktop";
 import { type BookLang, isBookLang } from "./languages";
 import {
   type Book,
@@ -40,14 +41,19 @@ export const api = async <T>(
   path: string,
   init?: { method?: string; body?: unknown },
 ): Promise<{ status: number; data: T }> => {
-  const r = await fetch(`/api${path}`, {
+  const headers: Record<string, string> = {};
+  if (init?.body !== undefined) headers["content-type"] = "application/json";
+  const desktop = tauri();
+  if (desktop) {
+    const token = await desktopToken();
+    if (!token) return { status: 401, data: {} as T };
+    headers.authorization = `Bearer ${token}`;
+  }
+  const r = await fetch(`${desktop ? API_ORIGIN : ""}/api${path}`, {
     method: init?.method ?? (init?.body === undefined ? "GET" : "POST"),
-    headers:
-      init?.body === undefined
-        ? undefined
-        : { "content-type": "application/json" },
+    headers,
     body: init?.body === undefined ? undefined : JSON.stringify(init.body),
-    credentials: "same-origin",
+    credentials: desktop ? "omit" : "same-origin",
   });
   return { status: r.status, data: (await r.json().catch(() => ({}))) as T };
 };

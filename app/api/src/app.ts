@@ -1,6 +1,9 @@
 import { Hono, type MiddlewareHandler } from "hono";
 import * as v from "valibot";
 import {
+  bearer,
+  desktopCode,
+  desktopToken,
   currentUser,
   googleLogin,
   loginOptions,
@@ -53,15 +56,44 @@ app.get("/api/health", (c) =>
   c.json({ worker: "app", environment: c.env.ENVIRONMENT }),
 );
 
+/** The desktop app's web view (macOS/Linux, then Windows). It authenticates with a bearer token only. */
+const DESKTOP_ORIGINS = new Set(["tauri://localhost", "http://tauri.localhost", "https://tauri.localhost"]);
+
 app.use("/api/*", async (c, next) => {
-  // CSRF: state-changing requests may only come from our own origin.
+  const origin = c.req.header("origin");
+  const desktop = !!origin && DESKTOP_ORIGINS.has(origin);
+  if (desktop) {
+    c.header("Access-Control-Allow-Origin", origin);
+    c.header("Vary", "Origin");
+    if (c.req.method === "OPTIONS") {
+      c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+      c.header("Access-Control-Allow-Headers", "authorization, content-type");
+      c.header("Access-Control-Max-Age", "86400");
+      return c.body(null, 204);
+    }
+  }
+  // CSRF: state-changing requests may only come from our own origin, or from the desktop app with
+  // a bearer token (a cross-site page can neither read nor send that token).
   if (c.req.method !== "GET" && c.req.method !== "HEAD") {
-    const origin = c.req.header("origin");
-    if (origin && origin !== new URL(c.req.url).origin)
+    if (origin && origin !== new URL(c.req.url).origin && !(desktop && bearer(c)))
       return c.json({ error: "origin" }, 403);
   }
   await next();
   c.header("Cache-Control", "no-store");
+});
+
+app.post("/api/auth/desktop/code", rateLimit("desktop", 20, 900_000), async (c) => {
+  const u = await currentUser(c);
+  if (!u) return c.json({ error: "auth" }, 401);
+  const b = await json(c, v.object({ challenge: v.pipe(v.string(), v.regex(/^[\w-]{43}$/)) }));
+  if (!b) return c.json({ error: "input" }, 400);
+  return c.json({ code: await desktopCode(c, u.id, b.challenge) });
+});
+app.post("/api/auth/desktop/token", rateLimit("desktop-token", 40, 900_000), async (c) => {
+  const b = await json(c, v.object({ code: v.pipe(v.string(), v.maxLength(64)), verifier: v.pipe(v.string(), v.minLength(43), v.maxLength(128)) }));
+  if (!b) return c.json({ error: "input" }, 400);
+  const token = await desktopToken(c, b.code, b.verifier);
+  return token ? c.json({ token }) : c.json({ error: "code" }, 400);
 });
 
 /** Public reading pages are a legacy capability, disabled in the unified product. */

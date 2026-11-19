@@ -13,6 +13,7 @@ import {
   Sun,
 } from "lucide-react";
 import { AccountDialog, AccountIcon } from "./Account";
+import { DesktopApprove } from "./DesktopApprove";
 import {
   dictationSupported,
   insertDictated,
@@ -166,6 +167,7 @@ export function App() {
   return (
     <div className={full ? "app zen" : "app"}>
       {acct && <AccountDialog lang={lang} onClose={() => setAcct(false)} />}
+      {!acct && <DesktopApprove lang={lang} onSignIn={() => setAcct(true)} />}
       <header className="titlebar">
         <button
           className="icon"

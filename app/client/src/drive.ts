@@ -4,6 +4,7 @@
 // Only the `drive.file` scope: the app sees just the files it created itself.
 import { create } from "zustand";
 import { type MediaRef, delBlob, getBlob, putBlob } from "./media";
+import { tauri } from "./desktop";
 import { type Book, CONFLICT, type DriveLink, type Item, titleOf, useStore } from "./store";
 
 export const GOOGLE_CLIENT_ID = "1030068899140-rrrs8rcrd2poro4vk5aggsrauqoncm2g.apps.googleusercontent.com";
@@ -60,8 +61,6 @@ let token = "";
 let expires = 0;
 // In the desktop app (Tauri), Google sign-in runs in the system browser and the refresh token is
 // kept in the system keychain; the app hands the editor a short-lived access token.
-type Tauri = { core: { invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> } };
-const tauri = (): Tauri | undefined => (window as unknown as { __TAURI__?: Tauri }).__TAURI__;
 
 async function getToken(interactive: boolean): Promise<string> {
   if (token && Date.now() < expires - 60_000) return token;

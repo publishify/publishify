@@ -15,6 +15,9 @@ import { switchWorkspace, useStore } from "./store";
 import { api, refreshAccount, syncAll } from "./sync";
 import { connectDrive, disconnectDrive, driveSync, useDrive } from "./drive";
 import { GoogleButton, type GoogleResult } from "./GoogleButton";
+import { desktopSignIn, desktopSignOut, tauri } from "./desktop";
+import { desktopCopy } from "./i18n/desktop";
+import { copyLang } from "./i18n/fallback";
 
 type Mode = "home" | "create" | "recover" | "code";
 
@@ -139,8 +142,19 @@ export function AccountDialog({
     await refreshAccount();
   };
 
+  const desktop = !!tauri();
+  const dc = desktopCopy[copyLang(lang, desktopCopy)];
+  const desktopLogin = () =>
+    guard(async () => {
+      setMsg(dc.waiting);
+      await desktopSignIn();
+      setMsg("");
+      await refreshAccount();
+    });
+
   const logout = async () => {
     await api("/auth/logout", { body: {} });
+    if (desktop) await desktopSignOut();
     await switchWorkspace(null);
     onClose();
   };
@@ -226,7 +240,7 @@ export function AccountDialog({
               />{" "}
               {t(lang, "syncNow")}
             </button>
-            <button
+            {!desktop && <button
               className="btn"
               disabled={busy}
               onClick={() => void addPasskey()}
@@ -236,8 +250,8 @@ export function AccountDialog({
                 style={{ display: "inline", verticalAlign: "-2px" }}
               />{" "}
               {t(lang, "addPasskey")}
-            </button>
-            {!googleLinked && (
+            </button>}
+            {!googleLinked && !desktop && (
               <GoogleButton lang={lang} onDone={afterGoogle} />
             )}
             <button className="btn" onClick={() => void logout()}>
@@ -250,7 +264,23 @@ export function AccountDialog({
           </>
         )}
 
-        {mode === "home" && !account && (
+        {mode === "home" && !account && desktop && (
+          <>
+            <p className="muted">{dc.browser}</p>
+            <button
+              className="btn primary"
+              disabled={busy}
+              onClick={() => void desktopLogin()}
+            >
+              <KeyRound
+                size={14}
+                style={{ display: "inline", verticalAlign: "-2px" }}
+              />{" "}
+              {t(lang, "signIn")}
+            </button>
+          </>
+        )}
+        {mode === "home" && !account && !desktop && (
           <>
             <p className="muted">{t(lang, "accountIntro")}</p>
             <button
