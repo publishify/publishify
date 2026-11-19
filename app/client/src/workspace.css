@@ -1007,3 +1007,12 @@ main .status {
   font-size: 1.035em;
   transition: opacity .2s;
 }
+
+/* The wordmark has no colour of its own: a pane of glass pressed into the page, so it takes on every theme. */
+.wordmark,
+.workspace-header .wordmark {
+  background: color-mix(in srgb, var(--ink) 13%, transparent);
+  filter:
+    drop-shadow(0 1px 0 color-mix(in srgb, white 55%, transparent))
+    drop-shadow(0 -1px 0 color-mix(in srgb, var(--ink) 12%, transparent));
+}
