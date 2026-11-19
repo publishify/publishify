@@ -46,7 +46,28 @@ export function App() {
     s.settings;
   const view = useRef<EditorView | null>(null);
   const [panel, setPanel] = useState<PanelKind | null>(null);
-  const [sidebar, setSidebar] = useState(wide);
+  // The page comes first: chapters are pinned only if the writer pinned them (⌘\\); otherwise they slide in from the left edge.
+  const [sidebar, setSidebar] = useState(() => {
+    try { return localStorage.getItem("pf-sidebar") === "1"; } catch { return false; }
+  });
+  const [peek, setPeek] = useState(false);
+  useEffect(() => {
+    try { localStorage.setItem("pf-sidebar", sidebar ? "1" : "0"); } catch { /* private window */ }
+  }, [sidebar]);
+  useEffect(() => {
+    // Typing hides the bar; moving the mouse brings it back. The left edge shows the chapters.
+    const move = (e: MouseEvent) => {
+      document.documentElement.classList.remove("typing");
+      if (e.clientX < 14 && e.clientY > 60) setPeek(true);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey && e.key.length === 1 && (e.target as HTMLElement)?.closest?.(".cm-editor"))
+        document.documentElement.classList.add("typing");
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("keydown", key); };
+  }, []);
   const [menu, setMenu] = useState(false);
   const [full, setFull] = useState(
     () =>
@@ -372,12 +393,14 @@ export function App() {
         </div>
       )}
       <div className="body">
-        {sidebar && !full && (
-          <Sidebar
-            book={book}
-            lang={lang}
-            onPick={() => !wide() && setSidebar(false)}
-          />
+        {(sidebar || peek) && !full && (
+          <div className={sidebar ? "sb-wrap" : "sb-wrap peek"} onMouseLeave={() => setPeek(false)}>
+            <Sidebar
+              book={book}
+              lang={lang}
+              onPick={() => { setPeek(false); if (!wide()) setSidebar(false); }}
+            />
+          </div>
         )}
         <main>
           <Suspense fallback={<div className="editor-host" />}>

@@ -922,3 +922,78 @@ html.mac-desktop .workspace-library { padding-top: 56px; }
 .sample-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; }
 @media (max-width: 900px) { .sample-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .sample-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── The writing page ──────────────────────────────────────────────────────────── */
+/* Chapters: pinned, or sliding over the page from the left edge. */
+.sb-wrap { display: flex; flex: none; }
+.sb-wrap.peek {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 25;
+  box-shadow: 12px 0 40px color-mix(in srgb, var(--ink) 16%, transparent);
+  animation: sb-in .18s ease-out;
+}
+@keyframes sb-in { from { transform: translateX(-24px); opacity: 0; } }
+.body { position: relative; }
+.sidebar .row .num {
+  flex: none;
+  min-width: 1.4em;
+  color: var(--muted);
+  font: 500 12px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.sidebar .row > svg { display: none; }
+.sidebar .row.part > svg,
+.sidebar .row:has(> svg + .name) > svg:first-child { display: inline-block; }
+.copies-row {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 8px 0;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.copies-row svg { width: 14px; height: 14px; }
+.copies-row small { margin-inline-start: auto; }
+
+/* Typing hides the bar; it comes back with the mouse. */
+.titlebar { transition: opacity .35s ease; }
+html.typing .titlebar { opacity: 0; }
+html.typing .titlebar:hover { opacity: 1; }
+
+/* A page like a book: a novel's measure, calm paragraphs, a centred chapter title. */
+.editor-host .cm-scroller { font-size: calc(var(--doc-size) + 1px); line-height: 1.72; padding-top: 56px; }
+.editor-host .cm-content { max-width: min(100%, 64ch); }
+.editor-host .cm-line.cm-h1 {
+  text-align: center;
+  padding: 24px 0 36px !important;
+}
+.editor-host .cm-line.cm-h1::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 1px;
+  margin: 22px auto 0;
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.editor-host .cm-h1 { font-family: var(--font-doc); font-weight: 500; letter-spacing: 0; }
+.editor-host .cm-h2, .editor-host .cm-h3 { font-family: var(--font-doc); font-weight: 600; letter-spacing: 0; }
+
+/* A quiet count at the foot of the page. */
+.status,
+main .status {
+  inset-inline: 0;
+  margin: 0 auto;
+  width: max-content;
+  bottom: 12px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  opacity: .55;
+}

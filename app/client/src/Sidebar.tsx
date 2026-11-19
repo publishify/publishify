@@ -111,6 +111,16 @@ export function Sidebar({
       });
   }, [book, closed, q, lang]);
 
+  // Chapters are numbered as in a printed book; conflicted copies wait together at the end.
+  const [showCopies, setShowCopies] = useState(false);
+  const chapterNo = useMemo(() => {
+    const m = new Map<string, number>();
+    let n = 0;
+    for (const i of live(book)) if (i.kind === "chapter" && i.level !== 2 && i.title !== CONFLICT) m.set(i.id, ++n);
+    return m;
+  }, [book]);
+  const copies = live(book).filter((i) => i.kind === "chapter" && i.title === CONFLICT).length;
+
   const toggle = (id: string) =>
     setClosed((c) => {
       const n = new Set(c);
@@ -246,7 +256,7 @@ export function Sidebar({
             {t(lang, "noResults")}
           </p>
         )}
-        {rows.map(({ i, depth, hasKids }) => (
+        {rows.filter(({ i }) => showCopies || q || i.title !== CONFLICT).map(({ i, depth, hasKids }) => (
           <div
             key={i.id}
             draggable={!q}
@@ -291,6 +301,9 @@ export function Sidebar({
               )
             ) : (
               <FileText />
+            )}
+            {i.kind === "chapter" && i.level !== 2 && i.title !== CONFLICT && (
+              <span className="num">{chapterNo.get(i.id)}</span>
             )}
             <span className="name">
               {titleOf(
@@ -354,6 +367,13 @@ export function Sidebar({
             </span>
           </div>
         ))}
+        {copies > 0 && !q && (
+          <button className="copies-row" onClick={() => setShowCopies((v) => !v)} title={t(lang, "conflictHint")}>
+            {showCopies ? <ChevronDown /> : <ChevronRight />}
+            <span>{t(lang, "conflictCopy")}</span>
+            <small>{copies}</small>
+          </button>
+        )}
       </nav>
       <ItemTrash book={book} lang={lang} />
     </aside>
