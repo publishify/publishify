@@ -1,15 +1,14 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { markdown } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, placeholder } from "@codemirror/view";
-import { GFM } from "@lezer/markdown";
 import { tags as t } from "@lezer/highlight";
 import { useEffect, useRef } from "react";
 import { toggleWrap } from "./commands";
 import { focusDim, typewriter } from "./focusMode";
 import { type BookLang, htmlLang, isRtl } from "./languages";
 import { livePreview } from "./livePreview";
+import { markdownSupport } from "./markdown";
 
 interface Props {
   docId: string;
@@ -83,7 +82,7 @@ export default function Editor({
             ...defaultKeymap,
             ...historyKeymap,
           ]),
-          markdown({ extensions: [GFM] }),
+          markdownSupport(),
           placeholder(initial.current.hint),
           syntaxHighlighting(mdStyle),
           livePreview,
