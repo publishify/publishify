@@ -9,6 +9,7 @@ import {
   Minimize,
   Link2,
   Type,
+  PanelLeft,
   PanelRight,
 } from "lucide-react";
 import { AccountDialog, AccountIcon } from "./Account";
@@ -214,6 +215,15 @@ export function App() {
           <span className="title-chapter"> · {titleOf(item, t(lang, "untitled"))}</span>
         </button>
         <span className="spacer" />
+        <button
+          className="icon"
+          aria-pressed={sidebar}
+          title={`${t(lang, "sidebarToggle")} (⌘\\)`}
+          aria-label={t(lang, "sidebarToggle")}
+          onClick={() => setSidebar((v) => !v)}
+        >
+          <PanelLeft />
+        </button>
         <button
           className="icon"
           title={t(lang, "account")}
