@@ -1,7 +1,7 @@
 /**
  * The desktop app (Tauri). The editor runs from the app's own files, so the account API is reached
  * at write.publishify.app with a bearer token kept in the system keychain. Signing in happens in
- * the system browser, where passkeys and Google work as on the web (see forMac/src-tauri/account.rs).
+ * the system browser, where passkeys and Google work as on the web (see publishify/desktop: src-tauri/src/account.rs).
  */
 type Tauri = { core: { invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> } };
 export const tauri = (): Tauri | undefined => (window as unknown as { __TAURI__?: Tauri }).__TAURI__;
