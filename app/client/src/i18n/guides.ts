@@ -243,6 +243,33 @@ export const templateNotes: Record<string, [string, string, string, string][]> =
     ["Karakterler", "Characters", "Her karakter için: ne istiyor, neden istiyor, önünde ne var? Görünüşünden çok konuşma biçimini not et.", "For each character: what they want, why, and what stands in the way. Note how they speak more than how they look."],
     ["Mekânlar", "Places", "Hikâyenin geçtiği yerler ve her birinde akılda kalacak bir ayrıntı.", "The places of the story and one memorable detail for each."],
   ],
+  "ders-kitabi": [
+    ["Öğrenci", "The student", "Kitabı kim okuyacak? Yaşı, sınıfı, konu hakkında önceden ne bildiği. Her ünitede bu öğrenciyi düşünerek yaz.", "Who will read the book? Age, grade, what they already know. Write every unit with this student in mind."],
+    ["Müfredat", "Curriculum", "Kitabın karşıladığı program ve kazanımlar listesi. Hangi ünite hangi kazanımı karşılıyor, buraya işaretle.", "The programme and outcomes the book covers. Mark here which unit covers which outcome."],
+    ["Terimler", "Terms", "Sözlüğe girecek terimleri yazdıkça buraya ekle; tanımı tek cümle olsun.", "Add terms for the glossary here as you write; keep each definition to one sentence."],
+    ["Görseller", "Pictures", "Gereken resim, şema ve tabloların listesi: hangi sayfada, ne anlatacak, kaynağı ne?", "A list of the pictures, diagrams and tables needed: which page, what they show, where they come from."],
+  ],
+  "rehber": [
+    ["Okur", "The reader", "Bu kitabı kim, hangi sorunla eline alıyor? Onun bir gününü tek paragrafta anlat.", "Who picks up this book, and with what problem? Describe one day of theirs in a paragraph."],
+    ["Örnekler ve hikâyeler", "Examples and stories", "Yöntemi canlandıracak gerçek örnekler, kısa hikâyeler ve alıntılar. Her birinin hangi bölüme gideceğini not et.", "Real examples, short stories and quotes that bring the method to life. Note which chapter each belongs to."],
+    ["Kaynaklar", "Sources", "Dayandığın kitaplar, araştırmalar ve görüştüğün kişiler. Künyeyi baştan tam yaz.", "The books, studies and people you rely on. Write the full reference from the start."],
+  ],
+  "makale": [
+    ["Araştırma sorusu", "Research question", "Makalenin cevapladığı tek soru ve hipotez. Her bölümü yazarken bu soruya dönüp bak.", "The single question the article answers, and the hypothesis. Return to it while writing every section."],
+    ["Okuma notları", "Reading notes", "Okuduğun her kaynak için: künye, ana iddia, senin çalışmanla ilişkisi ve alıntılar (sayfa numarasıyla).", "For every source: reference, main claim, how it relates to your work, and quotes with page numbers."],
+    ["Veri ve yöntem", "Data and method", "Veri nereden geldi, nasıl toplandı, hangi araçlarla çözümlendi? Tekrarlanabilir olacak kadar ayrıntı.", "Where the data came from, how it was collected and analysed. Enough detail to be repeated."],
+    ["Dergi ve biçim", "Journal and format", "Hedef dergi, kelime sınırı, atıf biçimi ve teslim tarihi.", "Target journal, word limit, citation style and deadline."],
+  ],
+  "sample:bavul": [
+    ["Karakterler", "Characters", "Öyküdeki her karakter için: ne istiyor, neyi saklıyor, nasıl konuşuyor?", "For each character: what they want, what they hide, how they speak."],
+    ["Mekânlar", "Places", "Öykünün geçtiği yerler ve her birinde akılda kalan bir ayrıntı: bir koku, bir ses, bir eşya.", "The places of the story and one detail that stays in mind: a smell, a sound, an object."],
+    ["Simgeler", "Symbols", "Öyküde tekrar eden nesneler ve anlamları. Bavul neyi taşıyor?", "Objects that recur in the story and what they carry. What does the suitcase hold?"],
+  ],
+  "sample:mercedes": [
+    ["Karakterler", "Characters", "Öyküdeki her karakter için: hayali ne, ona ulaşmak için neyi feda ediyor?", "For each character: what is their dream, and what do they give up to reach it?"],
+    ["Mekânlar", "Places", "Mahalle, iş yeri, yol. Her mekânın karaktere ne hissettirdiğini yaz.", "The neighbourhood, the workplace, the road. Write what each place makes the character feel."],
+    ["Zaman çizelgesi", "Timeline", "Çocukluktan bugüne olayların sırası ve aradan geçen yıllar.", "The order of events from childhood to today and the years between them."],
+  ],
   "novella": [
     ["Karakterler", "Characters", "Kısa anlatıda az karakter: her birinin hikâyedeki tek görevi ne?", "Few characters in short fiction: what is each one's single job in the story?"],
   ],

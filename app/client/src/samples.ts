@@ -21,7 +21,7 @@ export function openSample(sample: (typeof samples)[number]) {
       const specs = sample.template
         ? templateById(sample.template)?.items
         : undefined;
-      const notes = (templateNotes[sample.template ?? ""] ?? []).map(([title, , guide]) => ({
+      const notes = (templateNotes[sample.template ?? ""] ?? templateNotes[`sample:${sample.id}`] ?? []).map(([title, , guide]) => ({
         id: crypto.randomUUID(), kind: "chapter" as const, title: NOTE, body: chapterStart(title, guide),
         updated: Date.now(), versions: [], dirty: true,
       }));
@@ -40,7 +40,7 @@ export function openSample(sample: (typeof samples)[number]) {
         title: sample.title,
         author: sample.author,
         lang: "tr" as const,
-        items: sample.template ? [guide, ...chapters, ...notes] : [guide],
+        items: sample.template ? [guide, ...chapters, ...notes] : [guide, ...notes],
         activeId: guide.id,
       };
     }),

@@ -31,3 +31,16 @@ describe("template guides", () => {
     expect(toMarkdown(b)).not.toContain("guide");
   });
 });
+
+describe("sample notes", () => {
+  it("every sample opens with notes of its own", async () => {
+    const { samples, openSample } = await import("../samples");
+    const { useStore, isNote } = await import("../store");
+    for (const sample of samples) {
+      openSample(sample);
+      const s = useStore.getState();
+      const b = s.books.find((x) => x.id === s.activeBookId)!;
+      expect(b.items.filter(isNote).length, sample.id).toBeGreaterThan(0);
+    }
+  });
+});
