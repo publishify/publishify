@@ -149,6 +149,36 @@ export const guides: Record<string, [string, string]> = {
     "Show the method on a real example. When the reader closes the book, they should be able to take the first step.",
   ],
 
+  // Ders kitabı
+  "Bu kitap nasıl kullanılır": [
+    "Öğrenciye ve öğretmene kitabın düzenini anlat: ünitelerin yapısı, simgeler, etkinliklerin ve değerlendirmenin nasıl kullanılacağı. Bir sayfayı geçmesin.",
+    "Explain the book's layout to students and teachers: how units are built, what the icons mean, how to use the activities and assessments. Keep it under a page.",
+  ],
+  "Kazanımlar": [
+    "Ünite sonunda öğrencinin neyi bilip neyi yapabileceğini, ölçülebilir fiillerle maddeler hâlinde yaz: tanımlar, karşılaştırır, uygular. Konu anlatımını bu maddelere göre kur.",
+    "List what the student will know and be able to do by the end of the unit, with measurable verbs: defines, compares, applies. Build the topic around these points.",
+  ],
+  "Konu anlatımı": [
+    "Konuyu öğrencinin bildiğinden başlayarak adım adım aç. Her yeni kavramı bir örnekle göster, kısa paragraflar ve ara başlıklar kullan.",
+    "Open the topic step by step, starting from what the student already knows. Show every new idea with an example; use short paragraphs and subheadings.",
+  ],
+  "Örnekler ve etkinlikler": [
+    "Öğrencinin konuyu kendi eliyle denediği bölüm. Kolaydan zora sıralanan, her biri bir kazanıma bağlı etkinlikler hazırla.",
+    "Where the student tries the topic by hand. Prepare activities from easy to hard, each tied to one learning outcome.",
+  ],
+  "Değerlendirme": [
+    "Kazanımları ölçen sorular. Farklı soru türleri kullan; her sorunun hangi kazanımı ölçtüğünü kendin için not et.",
+    "Questions that measure the outcomes. Use different question types and note for yourself which outcome each one measures.",
+  ],
+  "Sözlük": [
+    "Kitapta geçen terimler, alfabetik sırayla ve tek cümlelik, öğrencinin anlayacağı tanımlarla.",
+    "The terms used in the book, in alphabetical order, each with a one-sentence definition a student understands.",
+  ],
+  "Cevap anahtarı": [
+    "Değerlendirme sorularının cevapları; açık uçlu sorular için beklenen cevabın ana noktaları.",
+    "Answers to the assessment questions; for open questions, the main points of the expected answer.",
+  ],
+
   // Akademik
   "Özet": [
     "Amacı, yöntemi, temel bulguyu ve sonucu birkaç cümlede ver. Özet en son yazılır; okurun okumaya devam edip etmeyeceğine o karar verdirir.",

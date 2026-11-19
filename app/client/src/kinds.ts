@@ -22,7 +22,7 @@ export const pubKinds: { id: string; tr: string; en: string }[] = [
 
 const fromTemplate: Record<string, string> = {
   "roman-uc-perde": "roman",
-  "roman-kahraman": "roman",
+  "ders-kitabi": "kitap",
   novella: "novella",
   hikaye: "hikaye",
   kucurek: "kucurek",

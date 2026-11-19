@@ -5,6 +5,10 @@ import { readImport } from "./import";
 import { importCopy } from "./i18n/import";
 import {
   BookMarked,
+  Compass,
+  FlaskConical,
+  GraduationCap,
+  Lightbulb,
   BookOpen,
   Feather,
   NotebookPen,
@@ -24,6 +28,7 @@ import { themeOrder } from "./themes";
 import { LibraryTrash } from "./Trash";
 import { type Lang, t, uiLangs } from "./i18n";
 import { type Book, bookItems, useStore, wordCount } from "./store";
+const sampleIcon: Record<string, typeof BookOpen> = { wayfarer: Compass, textbook: GraduationCap, guide: Lightbulb, article: FlaskConical };
 const genreIcon = { roman: BookMarked, novella: Feather, hikaye: ScrollText, diger: NotebookPen } as const;
 
 /** Where the writer left off: the last sentence of the chapter edited most recently. */
@@ -243,14 +248,15 @@ export function Library({ lang }: { lang: Lang }) {
                   <span className="sample-kind">{w.sample}</span>
                   <strong>{sample.title}</strong>
                   <span className="cover-art" aria-hidden="true">
-                    {index === 0 ? (
-                      <BookOpen size={52} />
-                    ) : index === 1 ? (
+                    {sample.id === "bavul" ? (
                       <span className="suitcase-art" />
-                    ) : index === 2 ? (
+                    ) : sample.id === "mercedes" ? (
                       <span className="road-art" />
                     ) : (
-                      <BookOpen size={48} />
+                      (() => {
+                        const Icon = sampleIcon[sample.id] ?? BookOpen;
+                        return <Icon size={48} strokeWidth={1.4} />;
+                      })()
                     )}
                   </span>
                   <small>{sample.author}</small>
@@ -260,7 +266,7 @@ export function Library({ lang }: { lang: Lang }) {
                 </span>
               </button>
               <p className="sample-credit">
-                {sample.id === "liman" ? w.demo : sample.author}
+                {sample.author}
                 {sample.source && (
                   <>
                     {" "}

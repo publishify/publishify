@@ -6,7 +6,7 @@ import { themeOrder } from "../themes";
 
 describe("sample books", () => {
   it("does not add samples until the author opens a copy", () => {
-    expect(samples).toHaveLength(5);
+    expect(samples.map((s) => s.id)).toEqual(["bavul", "mercedes", "wayfarer", "textbook", "guide", "article"]);
     expect(useStore.getState().books).toHaveLength(0);
   });
   it("opens independent copies without replacing existing manuscripts", () => {

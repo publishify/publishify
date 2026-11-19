@@ -9,25 +9,6 @@ export const sampleContent: {
   body: string;
 }[] = [
   {
-    id: "liman",
-    title: "Liman",
-    author: "Publishify",
-    body: `# Liman
-
-> Publishify tanıtım metni. Bu düzenlenebilir örnekte Markdown başlıklarını, alıntıları ve listeleri deneyebilirsin.
-
-Sabah, sis limanın üstünden çekilmeden önce gelmişti Nehir. Valizi küçüktü; içinde yalnızca bir defter, bir kalem ve *annesinin sesinin* kayıtlı olduğu eski bir kaset vardı.
-
-> “Deniz, söylemeyi bilmeyenlerin dilidir,” derdi babası.
-
-Nehir bunu hiçbir zaman anlamamıştı. Ta ki **o akşam**, iskelenin ucunda, tuzun kokusu çocukluğunun bütün kapılarını bir anda açana kadar.
-
-- Defterin ilk sayfası boştu.
-- İkincisine tek bir cümle yazdı.
-
-Kasetçaları bulmak kolay değildi; ama yazmak, diye düşündü, hâlâ elindeydi.`,
-  },
-  {
     id: "bavul",
     title: "Bavul",
     author: "Ali Osman Akçaoğlu",
@@ -82,23 +63,6 @@ Yıllardır hayalini kurduğu gibi yeşil Mercedes’in arka tarafında yatarcas
 © Ali Osman Akçaoğlu. Değişikliklerin yalnızca kendi kopyana kaydedilir.`,
   },
   {
-    id: "hero",
-    title: "Kahramanın Yolculuğu",
-    author: "Anlatı şablonu",
-    template: "roman-kahraman",
-    body: `# Kahramanın Yolculuğu
-
-Bu örnek kitap, karakterin alışılmış dünyasından ayrılıp sınavlarla değişmesini ve geri dönüşünü planlamak için hazırlanmıştır. Joseph Campbell’ın çalışmalarından esinlenen Christopher Vogler’in on iki aşamalı uyarlamasını kullanır. Aşamalar zorunlu bir reçete değildir; kendi anlatına göre değiştir, birleştir veya çıkar.
-
-İçindekilerde Ayrılış, Erginlenme ve Dönüş kısımlarını; bunların altında on iki bölüm başlığını bulabilirsin. Önce karakterin ne istediğini, neye ihtiyaç duyduğunu ve yolun sonunda nasıl değiştiğini düşün.
-
-## Başka bir mercek: Yolcunun Yedi Merhalesi
-
-Ali Osman Akçaoğlu’nun geliştirdiği model, yolculuğu karakteri yola çıkaran dert üzerinden ele alır. Ortak aşamaları ve yaklaşım farklarını anlamak için [Yolcunun Yedi Merhalesi yazısını oku](${sevenLink}).
-
-Bu sayfa rehberdir; yayıma hazırlanırken silebilirsin.`,
-  },
-  {
     id: "wayfarer",
     title: "Yolcunun Yedi Merhalesi",
     author: "Ali Osman Akçaoğlu · Anlatı modeli",
@@ -111,6 +75,45 @@ Ali Osman Akçaoğlu tarafından geliştirilen bu model, anlatıdaki değişimi 
 Bu kitapta her merhale için bir bölüm bulacaksın. Her aşamada karakterin derdinin nasıl değiştiğini, kararlarını ve bunların metindeki izlerini düşün. Merhaleler bir denetim listesi değildir; sıraları zorunlu değildir, bir merhalenin yokluğu kusur sayılmaz.
 
 [Modeli ve örneklerini blog yazısında keşfet](${sevenLink})
+
+Bu sayfa rehberdir; yayıma hazırlanırken silebilirsin.`,
+  },
+  {
+    id: "textbook",
+    title: "Hikâye Yazmaya Giriş",
+    author: "Publishify · Ders kitabı örneği",
+    template: "ders-kitabi",
+    body: `# Hikâye Yazmaya Giriş
+
+Bu örnek, bir ders kitabının iskeletini gösterir: üniteler, her ünitenin kazanımları, konu anlatımı, örnekler ve değerlendirme. Her bölümün başında o kısmın ne işe yaradığını anlatan kısa bir rehber var; rehberler dışa aktarıma girmez.
+
+Kendi dersine göre üniteleri çoğalt, adlarını değiştir. Önce öğrencinin ünite sonunda neyi yapabileceğini yaz, konu anlatımını ona göre kur.
+
+Bu sayfa rehberdir; yayıma hazırlanırken silebilirsin.`,
+  },
+  {
+    id: "guide",
+    title: "Her Sabah Bir Sayfa",
+    author: "Publishify · Kurgu dışı örneği",
+    template: "rehber",
+    body: `# Her Sabah Bir Sayfa
+
+Bu örnek, okura bir şey öğreten ya da bir alışkanlık kazandıran kurgu dışı bir kitabın yapısını gösterir: giriş, sorun, yöntem, uygulama ve sonuç.
+
+İyi bir rehber kitap okurun sorusuyla başlar ve kitap kapandığında atılabilecek ilk adımla biter. Her bölümdeki kısa rehberler bu yolu tarif eder.
+
+Bu sayfa rehberdir; yayıma hazırlanırken silebilirsin.`,
+  },
+  {
+    id: "article",
+    title: "Sessiz Okumanın Kısa Tarihi",
+    author: "Publishify · Akademik makale örneği",
+    template: "makale",
+    body: `# Sessiz Okumanın Kısa Tarihi
+
+Bu örnek, hakemli bir dergiye ya da bir tez bölümüne hazırlanan akademik makalenin bölümlerini gösterir: özet, giriş, kuramsal çerçeve, yöntem, bulgular, tartışma, sonuç ve kaynakça.
+
+Her bölümdeki kısa rehber, o bölümün okura ne vermesi gerektiğini anlatır. Atıf biçimini en baştan seç ve kaynakçayı yazdıkça güncelle.
 
 Bu sayfa rehberdir; yayıma hazırlanırken silebilirsin.`,
   },
