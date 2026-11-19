@@ -1021,3 +1021,44 @@ main .status {
 .titlebar .title { display: inline-flex; align-items: center; gap: 4px; }
 .titlebar .title .title-back { width: 16px; height: 16px; color: var(--muted); margin-inline-start: -4px; transition: transform .15s; }
 .titlebar .title:hover .title-back { transform: translateX(-2px); color: var(--ink); }
+
+/* ── Paper: plain white, ink black, nothing in between ─────────────────────────── */
+:root[data-theme="paper"] {
+  --bg: #ffffff;
+  --bg-sidebar: #f7f7f5;
+  --bg-bar: #ffffff;
+  --bg-hover: #efefec;
+  --bg-card: #ffffff;
+  --border: #e7e7e3;
+  --ink: #161616;
+  --ink-body: #262626;
+  --muted: #7a7a74;
+  --accent: #2b2b2b;
+  --accent-hover: #000000;
+  --accent-bg: #f0f0ed;
+  --accent-sel: #dde6f2;
+  --accent-ink: #1f1f1f;
+  --on-accent: #ffffff;
+  --logo: #2b2b2b;
+  color-scheme: light;
+}
+/* ── Graphite: a soft matte black, quiet blue for the few things that matter ────── */
+:root[data-theme="graphite"] {
+  --bg: #1b1b1c;
+  --bg-sidebar: #161617;
+  --bg-bar: #1b1b1c;
+  --bg-hover: #29292b;
+  --bg-card: #202022;
+  --border: #2e2e31;
+  --ink: #ecebe8;
+  --ink-body: #d6d4cf;
+  --muted: #8f8e8a;
+  --accent: #7ea6d8;
+  --accent-hover: #93b6e2;
+  --accent-bg: #23303f;
+  --accent-sel: #2b3d52;
+  --accent-ink: #93b6e2;
+  --on-accent: #0e1825;
+  --logo: #ecebe8;
+  color-scheme: dark;
+}

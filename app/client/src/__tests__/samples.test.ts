@@ -36,7 +36,7 @@ describe("sample books", () => {
     expect(book.lang).toBe("tr");
     expect(book.items.every((x) => x.dirty)).toBe(true);
   });
-  it("offers four curated themes and a custom theme", () => {
-    expect(themeOrder).toEqual(["light", "dark", "sepia", "pink", "custom"]);
+  it("offers six curated themes and a custom theme", () => {
+    expect(themeOrder).toEqual(["light", "paper", "sepia", "pink", "graphite", "dark", "custom"]);
   });
 });

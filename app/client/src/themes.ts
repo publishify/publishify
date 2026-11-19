@@ -8,11 +8,13 @@ export const themeColors: Record<
   light: { bg: "#f4f7f0", ink: "#17291e" },
   dark: { bg: "#0a0f0b", ink: "#eef2ec" },
   sepia: { bg: "#f6efdc", ink: "#3a2e1c" },
+  paper: { bg: "#ffffff", ink: "#161616" },
+  graphite: { bg: "#1b1b1c", ink: "#ecebe8" },
   green: { bg: "#EFF6ED", ink: "#000000" },
   pink: { bg: "#FFF1FA", ink: "#000000" },
   night: { bg: "#000014", ink: "#ffffff" },
 };
-export const themeOrder: Theme[] = ["light", "dark", "sepia", "pink", "custom"];
+export const themeOrder: Theme[] = ["light", "paper", "sepia", "pink", "graphite", "dark", "custom"];
 
 const lum = (hex: string): number => {
   const n = parseInt(hex.replace("#", "").padEnd(6, "0").slice(0, 6), 16);

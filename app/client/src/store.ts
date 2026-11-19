@@ -9,6 +9,8 @@ export type Theme =
   | "light"
   | "dark"
   | "sepia"
+  | "paper"
+  | "graphite"
   | "green"
   | "pink"
   | "night"
