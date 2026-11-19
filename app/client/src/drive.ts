@@ -58,8 +58,24 @@ export const loadGsi = (): Promise<void> => {
 
 let token = "";
 let expires = 0;
+// In the desktop app (Tauri), Google sign-in runs in the system browser and the refresh token is
+// kept in the system keychain; the app hands the editor a short-lived access token.
+type Tauri = { core: { invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> } };
+const tauri = (): Tauri | undefined => (window as unknown as { __TAURI__?: Tauri }).__TAURI__;
+
 async function getToken(interactive: boolean): Promise<string> {
   if (token && Date.now() < expires - 60_000) return token;
+  const desktop = tauri();
+  if (desktop) {
+    try {
+      const r = await desktop.core.invoke<{ access_token: string; expires_in: number }>("google_token", { interactive });
+      token = r.access_token;
+      expires = Date.now() + r.expires_in * 1000;
+      return token;
+    } catch {
+      throw new Error("auth");
+    }
+  }
   await loadGsi();
   return new Promise<string>((resolve, reject) => {
     const to = window.setTimeout(() => reject(new Error("auth")), interactive ? 120_000 : 15_000);
@@ -485,7 +501,8 @@ function clearLinks(): void {
 
 /** Disconnects. Local books and Drive files stay as they are. */
 export function disconnectDrive(): void {
-  if (token && window.google) window.google.accounts.oauth2.revoke(token);
+  if (tauri()) void tauri()!.core.invoke("google_sign_out").catch(() => undefined);
+  else if (token && window.google) window.google.accounts.oauth2.revoke(token);
   token = "";
   setHint(null);
   clearLinks();
