@@ -36,17 +36,6 @@ import { activeBook, titleOf, useStore, wordCount, bookItems, isNote, live } fro
 const Editor = lazy(() => import("./Editor"));
 const loadCommands = () => import("./commands");
 
-/** Shrinks a picture to at most 1600 px wide, as JPEG (PNG keeps transparency), and returns it as a data URL. */
-async function shrinkImage(file: File): Promise<string> {
-  const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / bmp.width);
-  const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * scale);
-  c.height = Math.round(bmp.height * scale);
-  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
-  return file.type === "image/png" ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", 0.82);
-}
-
 const wide = () => window.matchMedia("(min-width: 861px)").matches;
 
 export function App() {
@@ -207,27 +196,6 @@ export function App() {
     v.dispatch({ changes: { from: at, insert }, selection: { anchor: at + insert.length } });
     v.focus();
   };
-  /** A picture from this computer, made smaller (at most 1600 pixels wide) and kept inside the chapter. */
-  const pickImage = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      const v = view.current;
-      if (!file || !v) return;
-      const url = await shrinkImage(file).catch(() => null);
-      if (!url || url.length > 1_400_000) {
-        setToast(t(lang, "imageTooBig"));
-        window.setTimeout(() => setToast(""), 2500);
-        return;
-      }
-      const alt = file.name.replace(/\.[^.]+$/, "").replace(/[[\]]/g, "");
-      insertBlock(v, `![${alt}](${url})`);
-    };
-    input.click();
-  };
-
   const onCmd = async (cmd: Cmd) => {
     const c = await loadCommands();
     const v = view.current;
@@ -252,7 +220,10 @@ export function App() {
     if (w) c.toggleWrap(v, w);
     else if (p) c.toggleLinePrefix(v, p);
     else if (cmd === "link") c.insertLink(v);
-    else if (cmd === "image") pickImage();
+    else if (cmd === "image") {
+      const url = prompt(t(lang, "imagePrompt"))?.trim();
+      if (url) insertBlock(v, `![](${url})`);
+    }
     else if (cmd === "video") {
       const url = prompt(t(lang, "videoPrompt"))?.trim();
       if (url) insertBlock(v, `![](${url})`);

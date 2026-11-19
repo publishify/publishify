@@ -30,6 +30,7 @@ export const ar: Tr = {
   insertMath: "إدراج معادلة",
   insertVideo: "إدراج فيديو",
   videoPrompt: "رابط الفيديو (YouTube أو Vimeo أو ‎.mp4)",
+  imagePrompt: "رابط الصورة أو الرسم البياني (https://…)",
   imageTooBig: "الصورة كبيرة جدًا؛ اختر ملفًا أصغر.",
   newPart: "قسم جديد",
   newScene: "مشهد جديد",

@@ -30,6 +30,7 @@ export const ku: Tr = {
   insertMath: "Formûl têxe",
   insertVideo: "Vîdyo têxe",
   videoPrompt: "Girêdana vîdyoyê (YouTube, Vimeo an .mp4)",
+  imagePrompt: "Girêdana wêne an grafîkê (https://…)",
   imageTooBig: "Wêne pir mezin e; pelekî piçûktir hilbijêre.",
   newPart: "Para nû",
   untitled: "Beşa bêsernav",
