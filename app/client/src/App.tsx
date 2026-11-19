@@ -4,13 +4,13 @@ import type { EditorView } from "@codemirror/view";
 import {
   Download,
   Eye,
+  History,
   Keyboard,
   Minimize,
   Link2,
   Type,
   Library as LibraryIcon,
   Moon,
-  PanelLeft,
   PanelRight,
   Sun,
 } from "lucide-react";
@@ -73,6 +73,11 @@ export function App() {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "l") {
         e.preventDefault();
         useStore.getState().openBook(null);
+      }
+      // ⌘\ / Ctrl+\: show or hide the chapters
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        setSidebar((v) => !v);
       }
     };
     window.addEventListener("keydown", k);
@@ -193,6 +198,15 @@ export function App() {
       {!acct && <DesktopApprove lang={lang} onSignIn={() => setAcct(true)} />}
       <header className="titlebar" data-tauri-drag-region>
         <button
+          className="title"
+          title={`${t(lang, "library")} (⌘⇧L)`}
+          onClick={() => s.openBook(null)}
+        >
+          {book.title || t(lang, "untitled")}
+          <span className="title-chapter"> · {titleOf(item, t(lang, "untitled"))}</span>
+        </button>
+        <span className="spacer" />
+        <button
           className="icon"
           title={`${t(lang, "library")} (⌘⇧L)`}
           aria-label={t(lang, "library")}
@@ -202,21 +216,13 @@ export function App() {
         </button>
         <button
           className="icon"
-          aria-pressed={sidebar}
-          title={t(lang, "sidebarToggle")}
-          onClick={() => setSidebar((v) => !v)}
+          aria-pressed={panel === "history"}
+          title={t(lang, "history")}
+          aria-label={t(lang, "history")}
+          onClick={() => setPanel((p) => (p === "history" ? null : "history"))}
         >
-          <PanelLeft />
+          <History />
         </button>
-        <button
-          className="title"
-          title={`${t(lang, "library")} (⌘⇧L)`}
-          onClick={() => s.openBook(null)}
-        >
-          {book.title || t(lang, "untitled")}
-          <span className="title-chapter"> · {titleOf(item, t(lang, "untitled"))}</span>
-        </button>
-        <span className="spacer" />
         <div style={{ position: "relative" }}>
           <button
             className="icon"
