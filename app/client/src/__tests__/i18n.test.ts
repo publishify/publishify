@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   detectUiLang,
   isRtlUi,
   isUiLang,
   langFromUrl,
+  loadLang,
   t,
   uiLangs,
 } from "../i18n";
@@ -17,6 +18,9 @@ import { ar } from "../i18n/extra";
 import { de, fr, ja, ota, ru } from "../i18n/more";
 
 describe("interface languages", () => {
+  beforeAll(async () => {
+    for (const l of uiLangs) await loadLang(l.code);
+  });
   it("translated strings come from their own language", () => {
     expect(t("ar", "library")).toBe("المكتبة");
     expect(t("tr", "library")).toBe("Kitapl\u0131k");
@@ -25,7 +29,7 @@ describe("interface languages", () => {
     const keys = Object.keys(ar).length;
     for (const tr of [ar, ota, ku, de, fr, ru, ja])
       expect(Object.keys(tr).length).toBe(keys);
-    for (const key of ["boardSoon", "driveIntro", "googleFail"] as const) {
+    for (const key of ["driveIntro", "googleFail", "trashNote"] as const) {
       expect(t("ar", key)).not.toBe(t("en", key));
       expect(t("ota", key)).not.toBe(t("tr", key));
       expect(t("ku", key)).not.toBe(t("tr", key));

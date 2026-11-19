@@ -20,8 +20,17 @@ if (import.meta.env.DEV && location.search.includes("mockdrive"))
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { loadLang } from "./i18n";
+import { useStore } from "./store";
 import "./styles.css";
 import "./workspace.css";
+
+// Fetch the interface language before the first paint, and again whenever it changes.
+await loadLang(useStore.getState().settings.lang).catch(() => undefined);
+useStore.subscribe((now, before) => {
+  if (now.settings.lang !== before.settings.lang)
+    void loadLang(now.settings.lang).then(() => useStore.setState({}));
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -1,6 +1,3 @@
-import { ar } from "./extra";
-import { de, fr, ja, ota, ru } from "./more";
-import { ku } from "./ku";
 
 export type Lang =
   | "ar"
@@ -126,13 +123,6 @@ const dict = {
     restore: "Geri yükle",
     noVersions: "Henüz sürüm yok. Yazdıkça otomatik alınır.",
     preview: "Önizleme",
-    boardTitle: "Yayın kurulu",
-    boardText:
-      "Kurgu editörü, okur paneli ve tutarlılık denetçisi buradan metni okuyup işaretleyecek. Kurul metni asla yeniden yazmaz.",
-    boardSoon: "Kurul bir sonraki aşamada (sunucu) bağlanacak.",
-    boardBtn: "Kurula gönder",
-    dashboard: "Dashboard",
-    dashboardSoon: "Kahramanın yolculuğu haritası kurulla birlikte gelecek.",
     expMd: "Markdown (.md)",
     expHtml: "Web sayfası (.html)",
     expDocx: "Word (.docx)",
@@ -331,13 +321,6 @@ const dict = {
     restore: "Restore",
     noVersions: "No versions yet. They are taken automatically as you write.",
     preview: "Preview",
-    boardTitle: "Editorial board",
-    boardText:
-      "A fiction editor, a reader panel and a consistency checker will read and annotate your text here. The board never rewrites it.",
-    boardSoon: "The board connects in the next phase (server).",
-    boardBtn: "Send to board",
-    dashboard: "Dashboard",
-    dashboardSoon: "The hero's journey map arrives with the board.",
     expMd: "Markdown (.md)",
     expHtml: "Web page (.html)",
     expDocx: "Word (.docx)",
@@ -455,14 +438,22 @@ const dict = {
 } as const;
 
 export type Key = keyof (typeof dict)["tr"];
-const extra: Partial<Record<Lang, Partial<Record<Key, string>>>> = {
-  ar,
-  ota,
-  ku,
-  de,
-  fr,
-  ru,
-  ja,
+type Strings = Partial<Record<Key, string>>;
+const extra: Partial<Record<Lang, Strings>> = {};
+/** Turkish and English ship with the app; every other interface language is fetched when it is used. */
+const loaders: Partial<Record<Lang, () => Promise<Strings>>> = {
+  ar: () => import("./extra").then((m) => m.ar),
+  ku: () => import("./ku").then((m) => m.ku),
+  ota: () => import("./more").then((m) => m.ota),
+  de: () => import("./more").then((m) => m.de),
+  fr: () => import("./more").then((m) => m.fr),
+  ru: () => import("./more").then((m) => m.ru),
+  ja: () => import("./more").then((m) => m.ja),
+};
+export const loadLang = async (lang: Lang): Promise<void> => {
+  const load = loaders[lang];
+  if (!load || extra[lang]) return;
+  extra[lang] = await load();
 };
 /** Missing strings fall back to Turkish for Ottoman and Kurdish, to English otherwise. */
 export const t = (lang: Lang, key: Key): string =>

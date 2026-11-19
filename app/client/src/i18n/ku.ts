@@ -89,13 +89,6 @@ export const ku: Tr = {
   restore: "Vegerîne",
   noVersions: "Hîn guherto tune. Dema tu dinivîsî bixweber tên girtin.",
   preview: "Pêşdîtin",
-  boardTitle: "Desteya weşanê",
-  boardText:
-    "Edîtorek, panela xwîneran û kontrolkerê hevgirtinê dê nivîsa te li vir bixwînin û nîşan bikin. Deste qet nivîsê ji nû ve nanivîse.",
-  boardSoon: "Deste di qonaxa pêş de (server) tê girêdan.",
-  boardBtn: "Bişîne desteyê",
-  dashboard: "Panel",
-  dashboardSoon: "Nexşeya rêwîtiya qehremên bi desteyê re tê.",
   expMd: "Markdown (.md)",
   expHtml: "Rûpela webê (.html)",
   expDocx: "Word (.docx)",
