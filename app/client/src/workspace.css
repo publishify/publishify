@@ -997,3 +997,13 @@ main .status {
   letter-spacing: .02em;
   opacity: .55;
 }
+
+/* Focus: the line being written stands out; its paragraph stays readable but softer. */
+.cm-line.cm-para { opacity: .62; transition: opacity .2s; }
+.cm-line.cm-here {
+  opacity: 1;
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 1.035em;
+  transition: opacity .2s;
+}
