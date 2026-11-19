@@ -157,6 +157,10 @@ async function upload(fileId: string | null, meta: Record<string, unknown>, cont
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
+/** A chapter with no writing yet: empty, or only the heading a template starts it with. */
+export const isBlank = (body: string): boolean =>
+  body.split("\n").every((l) => !l.trim() || /^#{1,6}\s/.test(l.trim()));
+
 function hashStr(str: string): string {
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
   for (let i = 0; i < str.length; i++) {
@@ -310,7 +314,8 @@ async function syncBook(bookId: string, rootId: string, folders: DFile[], sameLi
     const text = await download(f.id);
     const link: DriveLink = { fileId: f.id, version: f.version, hash: hashStr(text) };
     if (text === c.body) links.set(c.id, link);
-    else if (!localChanged) replaces.push({ id: c.id, expect: h, body: text, link });
+    else if (!localChanged || isBlank(c.body)) replaces.push({ id: c.id, expect: h, body: text, link });
+    else if (isBlank(text)) await put(f.id); // Drive has only an empty or template chapter: keep the text written here
     else {
       // Both sides changed: the Drive version stays and the local text becomes a "conflicted copy" (same rule as ADR-0009).
       const copy: Item = { id: crypto.randomUUID(), kind: "chapter", title: CONFLICT, body: c.body, updated: Date.now(), versions: [], dirty: true };
