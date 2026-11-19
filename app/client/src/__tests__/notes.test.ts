@@ -20,3 +20,14 @@ describe("notes", () => {
     expect(scoped(book, "notes").items.map((i) => i.id)).toEqual(["n1"]);
   });
 });
+
+describe("template guides", () => {
+  it("are left out of word counts and exports", async () => {
+    const { wordCount } = await import("../store");
+    const { toMarkdown } = await import("../export");
+    const body = "# Call\n\n<!-- A guide of many words here -->\n\nOne two";
+    expect(wordCount(body)).toBe(4);
+    const b: Book = { ...book, items: [{ ...book.items[0]!, body }] };
+    expect(toMarkdown(b)).not.toContain("guide");
+  });
+});

@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { BookLang } from "./languages";
 import { type MediaRef, delBlob, newRef, putBlob, prepareCover } from "./media";
 import { templateById } from "./templates";
+import { guideFor, templateNotes } from "./i18n/guides";
 
 export type Theme =
   | "light"
@@ -176,14 +177,23 @@ let saveGeneration = 0;
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () => crypto.randomUUID();
 
-export const wordCount = (s: string) =>
-  s.trim() === "" ? 0 : s.trim().split(/\s+/).length;
+export const wordCount = (s: string) => {
+  const text = withoutGuides(s).trim();
+  return text === "" ? 0 : text.split(/\s+/).length;
+};
 
 export function titleOf(i: Item, fallback: string): string {
   if (i.kind === "part") return i.title || fallback;
   const line = i.body.split("\n").find((l) => l.trim() !== "") ?? "";
   return line.replace(/^[\s/\\|>*_~`#-]+/, "").replace(/[\s#*_~`]+$/, "").trim() || fallback;
 }
+
+/** A template chapter: its heading and, when there is one, a soft guide kept as a Markdown comment. */
+export const chapterStart = (title: string, guide?: string) =>
+  `# ${title}\n\n${guide ? `<!-- ${guide} -->\n\n` : ""}`;
+
+/** Text without the guides (Markdown comments): what is counted and exported. */
+export const withoutGuides = (s: string) => s.replace(/<!--[\s\S]*?-->\n*/g, "");
 
 const mkItem = (kind: Item["kind"], title = "", body = ""): Item => ({
   id: uid(),
@@ -365,8 +375,11 @@ export const useStore = create<State>((setS, getS) => {
               ? mkItem("part", sp.t[li])
               : sp.k === "scene"
                 ? { ...mkItem("chapter", "", ""), level: 2 }
-                : mkItem("chapter", "", `# ${sp.t[li]}\n\n`),
+                : mkItem("chapter", "", chapterStart(sp.t[li], guideFor(sp.t[0])?.[li])),
         );
+        // Notes that come with the template (characters, places...), after the chapters.
+        for (const [trT, enT, trG, enG] of templateNotes[tpl.id] ?? [])
+          items.push(mkItem("chapter", NOTE, chapterStart(li ? enT : trT, li ? enG : trG)));
         b.items = items;
         b.genre = tpl.genre;
         b.template = tpl.id;

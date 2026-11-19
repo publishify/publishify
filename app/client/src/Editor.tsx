@@ -1,7 +1,7 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { Compartment, EditorState } from "@codemirror/state";
-import { EditorView, keymap, placeholder } from "@codemirror/view";
+import { Decoration, EditorView, MatchDecorator, ViewPlugin, type ViewUpdate, keymap, placeholder } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import { useEffect, useRef } from "react";
 import { toggleWrap } from "./commands";
@@ -23,6 +23,17 @@ interface Props {
   bookLang: BookLang;
 }
 
+// Template guides are Markdown comments; hide the comment markers so only the soft text shows.
+const guideMarks = new MatchDecorator({ regexp: /<!--\s?|\s?-->/g, decoration: Decoration.mark({ class: "cm-guide-tag" }) });
+const hideGuideMarks = ViewPlugin.fromClass(
+  class {
+    decorations;
+    constructor(v: EditorView) { this.decorations = guideMarks.createDeco(v); }
+    update(u: ViewUpdate) { this.decorations = guideMarks.updateDeco(u, this.decorations); }
+  },
+  { decorations: (v) => v.decorations },
+);
+
 const mdStyle = HighlightStyle.define([
   { tag: t.strong, fontWeight: "700" },
   { tag: t.emphasis, fontStyle: "italic" },
@@ -36,6 +47,7 @@ const mdStyle = HighlightStyle.define([
     padding: "1px 4px",
   },
   { tag: t.link, textDecoration: "underline" },
+  { tag: t.comment, class: "cm-guide" },
 ]);
 
 const focusSlot = new Compartment();
@@ -88,6 +100,7 @@ export default function Editor({
           markdownSupport(),
           placeholder(initial.current.hint),
           syntaxHighlighting(mdStyle),
+          hideGuideMarks,
           livePreview,
           focusSlot.of(initial.current.focus ? focusDim : []),
           typeSlot.of(initial.current.tw ? typewriter : []),

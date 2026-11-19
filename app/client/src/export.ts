@@ -1,4 +1,4 @@
-import { isNote } from "./store";
+import { isNote, withoutGuides } from "./store";
 import DOMPurify from "dompurify";
 import { strToU8, zipSync } from "fflate";
 import { marked } from "marked";
@@ -48,14 +48,14 @@ function sections(book: Book): { part: boolean; md: string; title: string }[] {
     if (i.level === 2 && last && !last.part) {
       // A scene goes inside the chapter. Scenes are separated by "* * *"; if the chapter is only a heading, no separator is placed before the first scene.
       const sep = scenes === 0 && onlyHeading ? "" : "* * *\n\n";
-      last.md = `${last.md.trimEnd()}\n\n${sep}${i.body.trim()}`;
+      last.md = `${last.md.trimEnd()}\n\n${sep}${withoutGuides(i.body).trim()}`;
       scenes++;
       continue;
     }
     const lines = i.body.split("\n").filter((l) => l.trim());
     onlyHeading = lines.length <= 1 && lines.every((l) => l.startsWith("#"));
     scenes = 0;
-    out.push({ part: false, title: first(i.body), md: i.body });
+    out.push({ part: false, title: first(i.body), md: withoutGuides(i.body) });
   }
   return out;
 }

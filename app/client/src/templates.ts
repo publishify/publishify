@@ -38,6 +38,25 @@ export const templates: Template[] = [
   },
 
   {
+    id: "roman-yedi-merhale",
+    group: "kurgu",
+    genre: "roman",
+    name: ["Yolcunun Yedi Merhalesi (Kahraman\u0131n Yolculu\u011fu \u015eablonu)", "The Wayfarer's Seven Stages (Hero's Journey template)"],
+    desc: [
+      "Ali Osman Ak\u00e7ao\u011flu\u2019nun anlat\u0131y\u0131 dert \u00fczerinden okuyan yedi merhaleli modeli.",
+      "Ali Osman Akcaoglu's seven-stage narrative model centred on inner need.",
+    ],
+    items: [
+      C("\u00c7a\u011fr\u0131", "Call"),
+      C("K\u0131lavuz", "Guide"),
+      C("E\u015fik", "Threshold"),
+      C("S\u0131nav", "Trial"),
+      C("Uyan\u0131\u015f", "Awakening"),
+      C("\u00d6d\u00fcl", "Reward"),
+      C("D\u00f6n\u00fc\u015f", "Return"),
+    ],
+  },
+  {
     id: "roman-uc-perde",
     group: "kurgu",
     genre: "roman",
@@ -103,25 +122,6 @@ export const templates: Template[] = [
       C("D\u00f6n\u00fc\u015f yolu", "The road back"),
       C("Dirili\u015f", "Resurrection"),
       C("\u0130ksirle d\u00f6n\u00fc\u015f", "Return with the elixir"),
-    ],
-  },
-  {
-    id: "roman-yedi-merhale",
-    group: "kurgu",
-    genre: "roman",
-    name: ["Yolcunun Yedi Merhalesi", "The Wayfarer's Seven Stages"],
-    desc: [
-      "Ali Osman Ak\u00e7ao\u011flu\u2019nun anlat\u0131y\u0131 dert \u00fczerinden okuyan yedi merhaleli modeli.",
-      "Ali Osman Akcaoglu's seven-stage narrative model centred on inner need.",
-    ],
-    items: [
-      C("\u00c7a\u011fr\u0131", "Call"),
-      C("K\u0131lavuz", "Guide"),
-      C("E\u015fik", "Threshold"),
-      C("S\u0131nav", "Trial"),
-      C("Uyan\u0131\u015f", "Awakening"),
-      C("\u00d6d\u00fcl", "Reward"),
-      C("D\u00f6n\u00fc\u015f", "Return"),
     ],
   },
   {

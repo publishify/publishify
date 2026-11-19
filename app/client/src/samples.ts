@@ -1,6 +1,7 @@
 import { sampleContent } from "./i18n/samples";
 import { templateById } from "./templates";
-import { useStore } from "./store";
+import { NOTE, chapterStart, isNote, useStore } from "./store";
+import { guideFor, templateNotes } from "./i18n/guides";
 export const samples = sampleContent;
 export function openSample(sample: (typeof samples)[number]) {
   const s = useStore.getState();
@@ -20,13 +21,17 @@ export function openSample(sample: (typeof samples)[number]) {
       const specs = sample.template
         ? templateById(sample.template)?.items
         : undefined;
-      const chapters = book.items.map((item, index) => {
+      const notes = (templateNotes[sample.template ?? ""] ?? []).map(([title, , guide]) => ({
+        id: crypto.randomUUID(), kind: "chapter" as const, title: NOTE, body: chapterStart(title, guide),
+        updated: Date.now(), versions: [], dirty: true,
+      }));
+      const chapters = book.items.filter((i) => !isNote(i)).map((item, index) => {
         const spec = specs?.[index];
         return spec
           ? {
               ...item,
               title: spec.k === "part" ? spec.t[0] : "",
-              body: spec.k === "chapter" ? `# ${spec.t[0]}\n\n` : "",
+              body: spec.k === "chapter" ? chapterStart(spec.t[0], guideFor(spec.t[0])?.[0]) : "",
             }
           : item;
       });
@@ -35,7 +40,7 @@ export function openSample(sample: (typeof samples)[number]) {
         title: sample.title,
         author: sample.author,
         lang: "tr" as const,
-        items: sample.template ? [guide, ...chapters] : [guide],
+        items: sample.template ? [guide, ...chapters, ...notes] : [guide],
         activeId: guide.id,
       };
     }),

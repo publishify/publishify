@@ -9,7 +9,7 @@ import {
   Minimize,
   Link2,
   Type,
-  PanelLeft,
+  Library as LibraryIcon,
   PanelRight,
 } from "lucide-react";
 import { AccountDialog, AccountIcon } from "./Account";
@@ -222,7 +222,7 @@ export function App() {
           aria-label={t(lang, "sidebarToggle")}
           onClick={() => setSidebar((v) => !v)}
         >
-          <PanelLeft />
+          <LibraryIcon />
         </button>
         <button
           className="icon"

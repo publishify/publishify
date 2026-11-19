@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("idb-keyval", () => ({ get: vi.fn(), set: vi.fn(async () => {}) }));
 import { samples, openSample } from "../samples";
-import { useStore } from "../store";
+import { useStore, bookItems, isNote } from "../store";
 import { themeOrder } from "../themes";
 
 describe("sample books", () => {
@@ -25,12 +25,13 @@ describe("sample books", () => {
       state.books.find((x) => x.id === state.activeBookId)!.items[0]!.id,
     ).not.toBe(first.items[0]!.id);
   });
-  it("opens the seven-stage model with its guide and seven editable chapters", () => {
+  it("opens the seven-stage model with its guide, seven editable chapters and its notes", () => {
     const sample = samples.find((x) => x.id === "wayfarer")!;
     openSample(sample);
     const state = useStore.getState();
     const book = state.books.find((x) => x.id === state.activeBookId)!;
-    expect(book.items).toHaveLength(8);
+    expect(bookItems(book)).toHaveLength(8);
+    expect(book.items.filter(isNote).map((n) => n.body.split("\n")[0])).toContain("# Yolcu");
     expect(book.items[0]!.body).toContain(sample.source);
     expect(book.activeId).toBe(book.items[0]!.id);
     expect(book.lang).toBe("tr");
