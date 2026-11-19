@@ -64,6 +64,7 @@ export const ar: Tr = {
   noResults: "لا نتائج",
   startWriting: "ابدأ الكتابة…",
   fullscreen: "ملء الشاشة",
+  formatting: "التنسيق",
   sidebarToggle: "الشريط الجانبي",
   panelToggle: "اللوحة",
   stats: "الهدف",

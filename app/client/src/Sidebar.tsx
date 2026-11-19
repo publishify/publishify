@@ -7,7 +7,6 @@ import {
   FolderPlus,
   IndentDecrease,
   IndentIncrease,
-  Library,
   Pencil,
   Plus,
   Search,
@@ -142,13 +141,6 @@ export function Sidebar({
           onClick={() => setEdit(true)}
         >
           <Pencil />
-        </button>
-        <button
-          className="icon"
-          title={t(lang, "library")}
-          onClick={() => openBook(null)}
-        >
-          <Library />
         </button>
       </div>
       <button className="bookpick" onClick={() => setPick((p) => !p)}>

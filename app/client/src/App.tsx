@@ -5,8 +5,10 @@ import {
   Download,
   Eye,
   Keyboard,
-  Maximize,
   Minimize,
+  Link2,
+  Type,
+  Library as LibraryIcon,
   Moon,
   PanelLeft,
   PanelRight,
@@ -55,6 +57,27 @@ export function App() {
   const [acct, setAcct] = useState(false);
   const [dictating, setDictating] = useState(false);
   const [toast, setToast] = useState("");
+  // Writing comes first: the formatting bar is hidden until asked for; selecting text shows a small menu.
+  const [tools, setTools] = useState(() => {
+    try { return localStorage.getItem("pf-tools") === "1"; } catch { return false; }
+  });
+  const [bubble, setBubble] = useState<{ x: number; y: number } | null>(null);
+  const toggleTools = () =>
+    setTools((v) => {
+      try { localStorage.setItem("pf-tools", v ? "0" : "1"); } catch { /* private window */ }
+      return !v;
+    });
+  useEffect(() => {
+    // ⌘⇧L / Ctrl+Shift+L: back to the library
+    const k = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        useStore.getState().openBook(null);
+      }
+    };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, []);
   const stopDictation = useRef<null | (() => void)>(null);
   useEffect(() => () => stopDictation.current?.(), []);
   const flash = (m: string) => {
@@ -168,7 +191,11 @@ export function App() {
     <div className={full ? "app zen" : "app"}>
       {acct && <AccountDialog lang={lang} onClose={() => setAcct(false)} />}
       {!acct && <DesktopApprove lang={lang} onSignIn={() => setAcct(true)} />}
-      <header className="titlebar">
+      <header className="titlebar" data-tauri-drag-region>
+        <button className="btn library-nav" onClick={() => s.openBook(null)}>
+          <LibraryIcon size={17} aria-hidden="true" />
+          {t(lang, "library")}
+        </button>
         <button
           className="icon"
           aria-pressed={sidebar}
@@ -177,7 +204,14 @@ export function App() {
         >
           <PanelLeft />
         </button>
-        <span className="title">{titleOf(item, t(lang, "untitled"))}</span>
+        <button
+          className="title"
+          title={`${t(lang, "library")} (⌘⇧L)`}
+          onClick={() => s.openBook(null)}
+        >
+          {book.title || t(lang, "untitled")}
+          <span className="title-chapter"> · {titleOf(item, t(lang, "untitled"))}</span>
+        </button>
         <span className="spacer" />
         <div style={{ position: "relative" }}>
           <button
@@ -217,14 +251,11 @@ export function App() {
         </button>
         <button
           className="icon"
-          title={t(lang, "fullscreen")}
-          onClick={() =>
-            document.fullscreenElement
-              ? void document.exitFullscreen()
-              : void document.documentElement.requestFullscreen()
-          }
+          aria-pressed={tools}
+          title={t(lang, "formatting")}
+          onClick={toggleTools}
         >
-          {full ? <Minimize /> : <Maximize />}
+          <Type />
         </button>
         <button
           className="icon"
@@ -243,7 +274,7 @@ export function App() {
         </button>
       </header>
 
-      <Toolbar
+      {tools && <Toolbar
         lang={lang}
         onCmd={(c) => void onCmd(c)}
         dictating={dictating}
@@ -268,7 +299,21 @@ export function App() {
             </button>
           </>
         }
-      />
+      />}
+      {bubble && !tools && (
+        <div
+          className="bubble"
+          role="toolbar"
+          style={{ left: bubble.x, top: bubble.y }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {(["bold", "italic", "h2", "quote", "link"] as const).map((c) => (
+            <button key={c} onClick={() => void onCmd(c)} aria-label={t(lang, c === "h2" ? "h2" : c)}>
+              {c === "bold" ? <b>B</b> : c === "italic" ? <i>I</i> : c === "h2" ? "H" : c === "quote" ? "“" : <Link2 size={15} />}
+            </button>
+          ))}
+        </div>
+      )}
 
       {book.syncConflict && (
         <div role="alert" className="card">
@@ -334,6 +379,7 @@ export function App() {
               hint={t(lang, "startWriting")}
               bookLang={bookLangOf(book, lang)}
               onChange={(text) => s.setBody(item.id, text)}
+              onSelect={setBubble}
               onView={(v) => {
                 view.current = v;
               }}

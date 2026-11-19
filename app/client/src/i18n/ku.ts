@@ -115,6 +115,7 @@ export const ku: Tr = {
   noResults: "Encam tune",
   startWriting: "Dest bi nivîsê bike…",
   fullscreen: "Ekrana tijî",
+  formatting: "Format",
   sidebarToggle: "Darika kêlekê",
   panelToggle: "Panel",
   stats: "Armanc",

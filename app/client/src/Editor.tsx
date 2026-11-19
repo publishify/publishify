@@ -17,6 +17,8 @@ interface Props {
   typewriter: boolean;
   onChange: (text: string) => void;
   onView: (v: EditorView | null) => void;
+  /** Where the selected text starts on screen, or null when nothing is selected. */
+  onSelect?: (at: { x: number; y: number } | null) => void;
   hint: string;
   bookLang: BookLang;
 }
@@ -57,13 +59,14 @@ export default function Editor({
   typewriter: tw,
   onChange,
   onView,
+  onSelect,
   hint,
   bookLang,
 }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
-  const cb = useRef({ onChange, onView });
-  cb.current = { onChange, onView };
+  const cb = useRef({ onChange, onView, onSelect });
+  cb.current = { onChange, onView, onSelect };
   const initial = useRef({ value, focus, tw, hint, bookLang });
   initial.current = { value, focus, tw, hint, bookLang };
 
@@ -92,6 +95,11 @@ export default function Editor({
           langSlot.of(langExt(initial.current.bookLang)),
           EditorView.updateListener.of((u) => {
             if (u.docChanged) cb.current.onChange(u.state.doc.toString());
+            if (u.selectionSet || u.docChanged || u.focusChanged) {
+              const sel = u.state.selection.main;
+              const at = !sel.empty && u.view.hasFocus ? u.view.coordsAtPos(sel.from) : null;
+              cb.current.onSelect?.(at ? { x: at.left, y: at.top } : null);
+            }
           }),
         ],
       }),

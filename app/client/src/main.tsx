@@ -32,6 +32,10 @@ useStore.subscribe((now, before) => {
     void loadLang(now.settings.lang).then(() => useStore.setState({}));
 });
 
+// The desktop app on macOS draws its content under the window buttons (overlay title bar).
+if ("__TAURI__" in window && /Mac/.test(navigator.userAgent))
+  document.documentElement.classList.add("mac-desktop");
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

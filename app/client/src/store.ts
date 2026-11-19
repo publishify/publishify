@@ -175,7 +175,7 @@ export const wordCount = (s: string) =>
 export function titleOf(i: Item, fallback: string): string {
   if (i.kind === "part") return i.title || fallback;
   const line = i.body.split("\n").find((l) => l.trim() !== "") ?? "";
-  return line.replace(/^#+\s*/, "").trim() || fallback;
+  return line.replace(/^[\s/\\|>*_~`#-]+/, "").replace(/[\s#*_~`]+$/, "").trim() || fallback;
 }
 
 const mkItem = (kind: Item["kind"], title = "", body = ""): Item => ({

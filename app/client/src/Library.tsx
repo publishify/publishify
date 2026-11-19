@@ -4,13 +4,11 @@ import { workspace } from "./i18n/workspace";
 import { readImport } from "./import";
 import { importCopy } from "./i18n/import";
 import {
-  ArrowUpRight,
   BookOpen,
   Moon,
   Pencil,
   Plus,
   Sun,
-  Upload,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { AccountDialog, AccountIcon } from "./Account";
@@ -51,6 +49,7 @@ export function Library({ lang }: { lang: Lang }) {
   const words = (b: Book) => live(b).reduce((n, i) => n + wordCount(i.body), 0);
   return (
     <div className="library workspace-library">
+      <div className="drag-strip" data-tauri-drag-region />
       {acct && <AccountDialog lang={lang} onClose={() => setAcct(false)} />}
       {edit && (
         <BookDialog bookId={edit} lang={lang} onClose={() => setEdit(null)} />
@@ -140,43 +139,16 @@ export function Library({ lang }: { lang: Lang }) {
           {t(lang, "newBook")}
         </button>
       </header>
-      <section className="workspace-hero">
-        <div className="workspace-welcome">
-          <p className="eyebrow">{w.eyebrow}</p>
-          <h1>{w.title}</h1>
-          <p className="intro">{w.intro}</p>
-          <div className="workspace-actions">
-            <button className="btn primary" onClick={() => setNewBook(true)}>
-              <Plus size={18} />
-              {w.create}
-            </button>
-            <button className="btn" onClick={() => fileInput.current?.click()}>
-              <Upload size={17} />
-              {w.import}
-            </button>
-          </div>
-          <p className="local-note">{w.local}</p>
-        </div>
-        <div className="desk-scene" aria-hidden="true">
-          <div className="desk-orbit" />
-          <div className="desk-paper">
-            Write.
-            <br />
-            Refine.
-            <br />
-            <em>Publish.</em>
-          </div>
-          <div className="desk-volume">
-            <img src="/demo-cover.svg" alt="" />
-          </div>
-          <span className="desk-caption">{w.cover}</span>
-        </div>
-      </section>
+      {books.length === 0 && (
+        <section className="library-empty">
+          <h1>{w.yours}</h1>
+          <p>{w.local}</p>
+        </section>
+      )}
       {books.length > 0 && (
         <>
           <div className="section-heading">
-            <h2>{w.yours}</h2>
-            <span>{books.length.toLocaleString(lang)}</span>
+            <h1>{w.yours}</h1>
           </div>
 
           <div className="shelf">
@@ -188,6 +160,7 @@ export function Library({ lang }: { lang: Lang }) {
                   onClick={() => openBook(b.id)}
                 >
                   <Cover book={b} />
+                  <span className="book-continue">{w.continue}</span>
                 </button>
                 <div className="meta">
                   <span>
@@ -199,6 +172,7 @@ export function Library({ lang }: { lang: Lang }) {
                     <button
                       className="link-danger"
                       title={t(lang, "editBook")}
+                      aria-label={t(lang, "editBook")}
                       onClick={(e) => {
                         e.stopPropagation();
                         setEdit(b.id);
@@ -225,14 +199,13 @@ export function Library({ lang }: { lang: Lang }) {
           </div>
         </>
       )}
-      <section className="sample-library">
-        <div className="section-heading">
+      <details className="sample-library" open={books.length === 0}>
+        <summary className="section-heading">
           <div>
-            <p className="eyebrow">PUBLISHIFY</p>
             <h2>{w.examples}</h2>
             <p>{w.exampleIntro}</p>
           </div>
-        </div>
+        </summary>
         <div className="sample-grid">
           {samples.map((sample, index) => (
             <article className={`sample-book sample-${index}`} key={sample.id}>
@@ -259,7 +232,6 @@ export function Library({ lang }: { lang: Lang }) {
                 </span>
                 <span className="sample-cta">
                   {w.copy}
-                  <ArrowUpRight size={17} />
                 </span>
               </button>
               <p className="sample-credit">
@@ -277,7 +249,7 @@ export function Library({ lang }: { lang: Lang }) {
             </article>
           ))}
         </div>
-      </section>
+      </details>
       <LibraryTrash lang={lang} />
     </div>
   );
