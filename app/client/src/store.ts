@@ -58,7 +58,10 @@ export interface DriveLink {
 export const CONFLICT = "__conflict__";
 /** A note (characters, places, research): a chapter marked in the title field, like a conflicted copy, so it syncs everywhere unchanged. Notes are never counted or exported with the book unless asked. */
 export const NOTE = "__note__";
-export const isNote = (i: Pick<Item, "kind" | "title">) => i.kind === "chapter" && i.title === NOTE;
+/** The book's summary and chapter plan: one page beside the book, kept like a note. */
+export const PLAN = "__plan__";
+export const isPlan = (i: Pick<Item, "kind" | "title">) => i.kind === "chapter" && i.title === PLAN;
+export const isNote = (i: Pick<Item, "kind" | "title">) => i.kind === "chapter" && (i.title === NOTE || i.title === PLAN);
 /** The book's own text: everything except notes. */
 export const bookItems = (b: Book): Item[] => live(b).filter((i) => !isNote(i));
 /** Are there unsynced changes? (for old records without the field: yes if never synced) */
@@ -82,6 +85,8 @@ export interface Book {
   /** Sync status (while an account is active). */
   remote?: boolean;
   cursor?: number;
+  /** The writer's bookmark: a chapter and a position in it. Opening the book goes there. */
+  mark?: { item: string; pos: number };
   syncConflict?: {
     meta?: { title: string; author: string; genre?: Genre; lang?: BookLang };
     order?: string[];
@@ -156,7 +161,7 @@ interface State extends Persisted {
   purgeBook(id: string): void;
   emptyBookTrash(): void;
   setActive(itemId: string): void;
-  addItem(kind: "part" | "chapter" | "scene" | "note"): void;
+  addItem(kind: "part" | "chapter" | "scene" | "note" | "plan"): void;
   renameItem(id: string, title: string): void;
   setLevel(id: string, scene: boolean): void;
   trashItem(id: string): void;
@@ -359,7 +364,16 @@ export const useStore = create<State>((setS, getS) => {
         history.replaceState(history.state, "", url.pathname + url.search + url.hash);
       }
     },
-    openBook: (id) => mutate(() => ({ activeBookId: id })),
+    openBook: (id) =>
+      mutate((s) => ({
+        activeBookId: id,
+        // Opening a book with a bookmark goes straight to it.
+        books: s.books.map((b) =>
+          b.id === id && b.mark && b.items.some((i) => i.id === b.mark!.item && !i.trashed)
+            ? { ...b, activeId: b.mark.item }
+            : b,
+        ),
+      })),
     addBook(templateId) {
       const lang = getS().settings.lang;
       const b = mkBook(t0(lang), lang);
@@ -506,6 +520,8 @@ export const useStore = create<State>((setS, getS) => {
             ? { ...mkItem("chapter", "", ""), level: 2 }
             : kind === "note"
               ? mkItem("chapter", NOTE, `# ${t(lang, "newNote")}\n\n`)
+              : kind === "plan"
+                ? mkItem("chapter", PLAN, `${chapterStart(t(lang, "plan"), t(lang, "planGuide"))}## ${t(lang, "planSummary")}\n\n\n\n## ${t(lang, "planOutline")}\n\n1. \n`)
               : mkItem(
                 "chapter",
                 "",

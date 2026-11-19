@@ -1,5 +1,7 @@
 import {
   BookOpen,
+  Bookmark,
+  ScrollText,
   ChevronDown,
   ChevronRight,
   FilePlus2,
@@ -23,6 +25,7 @@ import {
   type Book,
   CONFLICT,
   isNote,
+  isPlan,
   activeBook,
   hasScenes,
   live,
@@ -121,7 +124,8 @@ export function Sidebar({
     for (const i of live(book)) if (i.kind === "chapter" && i.level !== 2 && i.title !== CONFLICT) m.set(i.id, ++n);
     return m;
   }, [book]);
-  const notes = live(book).filter((i) => isNote(i) && (!q || i.body.toLocaleLowerCase(lang).includes(q.trim().toLocaleLowerCase(lang))));
+  const plan = live(book).find(isPlan);
+  const notes = live(book).filter((i) => isNote(i) && !isPlan(i) && (!q || i.body.toLocaleLowerCase(lang).includes(q.trim().toLocaleLowerCase(lang))));
   const copies = live(book).filter((i) => i.kind === "chapter" && i.title === CONFLICT).length;
 
   const toggle = (id: string) =>
@@ -254,6 +258,19 @@ export function Sidebar({
           setOver(null);
         }}
       >
+        {!q && (
+          <div
+            className={`row chapter plan-row ${plan && plan.id === book.activeId ? "active" : ""}`}
+            onClick={() => {
+              if (plan) setActive(plan.id);
+              else addItem("plan");
+              onPick?.();
+            }}
+          >
+            <ScrollText />
+            <span className="name">{t(lang, "plan")}</span>
+          </div>
+        )}
         {rows.length === 0 && q && (
           <p className="muted" style={{ padding: 8 }}>
             {t(lang, "noResults")}
@@ -330,6 +347,7 @@ export function Sidebar({
                 {t(lang, "conflictCopy")} ✓
               </span>
             )}
+            {book.mark?.item === i.id && <Bookmark className="mark" aria-label={t(lang, "bookmarkGo")} />}
             {i.kind === "chapter" && i.audio && (
               <Volume2 size={13} aria-label={t(lang, "audio")} />
             )}

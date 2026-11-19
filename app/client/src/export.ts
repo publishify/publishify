@@ -1,4 +1,5 @@
 import { isNote, withoutGuides } from "./store";
+import { richMarkdown } from "./richText";
 import DOMPurify from "dompurify";
 import { strToU8, zipSync } from "fflate";
 import { marked } from "marked";
@@ -60,6 +61,12 @@ function sections(book: Book): { part: boolean; md: string; title: string }[] {
   return out;
 }
 
+/** Markdown to safe HTML, with formulas (MathML, read by browsers and e-readers) and video files. */
+async function rendered(md: string): Promise<string> {
+  const { md: prepared, fill } = await richMarkdown(md);
+  return fill(DOMPurify.sanitize(await marked.parse(prepared), { ADD_TAGS: ["video"], ADD_ATTR: ["controls"] }));
+}
+
 /** The book's writing language (Turkish if undefined). */
 const bl = (book: Book): BookLang => bookLangOf(book, "tr");
 
@@ -99,7 +106,7 @@ async function bodyHtml(book: Book): Promise<string> {
   ];
   for (const s of sections(book))
     parts.push(
-      `<section>${DOMPurify.sanitize(await marked.parse(s.md))}</section>`,
+      `<section>${await rendered(s.md)}</section>`,
     );
   return parts.join("\n");
 }
@@ -263,7 +270,7 @@ async function epub(book: Book): Promise<Uint8Array> {
   );
   const ids: { id: string; href: string; title: string }[] = [];
   for (const [n, s] of secs.entries()) {
-    const html = (await marked.parse(s.md))
+    const html = (await rendered(s.md))
       .replace(/<br>/g, "<br/>")
       .replace(/<hr>/g, "<hr/>");
     const href = `s${String(n + 1).padStart(3, "0")}.xhtml`;

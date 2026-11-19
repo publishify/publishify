@@ -1,6 +1,9 @@
 import {
   Bold,
   CheckSquare,
+  Clapperboard,
+  ImagePlus,
+  Sigma,
   Code,
   Heading1,
   Heading2,
@@ -31,7 +34,10 @@ export type Cmd =
   | "check"
   | "quote"
   | "link"
-  | "hr";
+  | "hr"
+  | "image"
+  | "math"
+  | "video";
 
 const items: (
   | { cmd: Cmd; icon: ReactNode; label: Key; hint?: string }
@@ -53,6 +59,10 @@ const items: (
   { cmd: "quote", icon: <Quote />, label: "quote" },
   { cmd: "link", icon: <Link2 />, label: "link" },
   { cmd: "hr", icon: <Minus />, label: "hr" },
+  "sep",
+  { cmd: "image", icon: <ImagePlus />, label: "insertImage" },
+  { cmd: "video", icon: <Clapperboard />, label: "insertVideo" },
+  { cmd: "math", icon: <Sigma />, label: "insertMath" },
 ];
 
 export function Toolbar({

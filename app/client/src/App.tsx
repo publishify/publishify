@@ -2,7 +2,10 @@ import { copyLang } from "./i18n/fallback";
 import { syncCopy } from "./i18n/sync";
 import type { EditorView } from "@codemirror/view";
 import {
+  Bookmark as BookmarkIcon,
+  BookmarkCheck,
   ChevronLeft,
+  ChevronRight,
   Eye,
   Keyboard,
   Maximize,
@@ -28,10 +31,21 @@ import { Panel, type PanelKind } from "./Panel";
 import { Sidebar } from "./Sidebar";
 import { Toolbar, type Cmd } from "./Toolbar";
 import { isRtlUi, t } from "./i18n";
-import { activeBook, titleOf, useStore, wordCount, bookItems } from "./store";
+import { activeBook, titleOf, useStore, wordCount, bookItems, isNote, live } from "./store";
 
 const Editor = lazy(() => import("./Editor"));
 const loadCommands = () => import("./commands");
+
+/** Shrinks a picture to at most 1600 px wide, as JPEG (PNG keeps transparency), and returns it as a data URL. */
+async function shrinkImage(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / bmp.width);
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * scale);
+  c.height = Math.round(bmp.height * scale);
+  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+  return file.type === "image/png" ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", 0.82);
+}
 
 const wide = () => window.matchMedia("(min-width: 861px)").matches;
 
@@ -47,6 +61,8 @@ export function App() {
     try { return localStorage.getItem("pf-sidebar") === "1"; } catch { return false; }
   });
   const [peek, setPeek] = useState(false);
+  const [ctx, setCtx] = useState<{ x: number; y: number; pos: number } | null>(null);
+  const usedMark = useRef(new Set<string>());
   useEffect(() => {
     try { localStorage.setItem("pf-sidebar", sidebar ? "1" : "0"); } catch { /* private window */ }
   }, [sidebar]);
@@ -171,6 +187,46 @@ export function App() {
   if (!book || !item) return <Library lang={lang} />;
 
   const bookWords = bookItems(book).reduce((n, i) => n + wordCount(i.body), 0);
+  // Reading order for the arrows: the book's chapters and scenes, or the notes when a note is open.
+  const flow = (isNote(item) ? live(book).filter(isNote) : bookItems(book)).filter((i) => i.kind === "chapter");
+  const here = flow.findIndex((i) => i.id === item.id);
+  const prev = here > 0 ? flow[here - 1] : undefined;
+  const next = here >= 0 && here < flow.length - 1 ? flow[here + 1] : undefined;
+  // The bookmark is used once per opening of the book.
+  let jumpAt: number | undefined;
+  if (book.mark?.item === item.id && !usedMark.current.has(book.id)) {
+    usedMark.current.add(book.id);
+    jumpAt = book.mark.pos;
+  }
+
+  /** A picture, video or formula goes on its own line at the cursor. */
+  const insertBlock = (v: EditorView, text: string) => {
+    const line = v.state.doc.lineAt(v.state.selection.main.head);
+    const at = line.to;
+    const insert = `${line.length ? "\n\n" : ""}${text}\n\n`;
+    v.dispatch({ changes: { from: at, insert }, selection: { anchor: at + insert.length } });
+    v.focus();
+  };
+  /** A picture from this computer, made smaller (at most 1600 pixels wide) and kept inside the chapter. */
+  const pickImage = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      const v = view.current;
+      if (!file || !v) return;
+      const url = await shrinkImage(file).catch(() => null);
+      if (!url || url.length > 1_400_000) {
+        setToast(t(lang, "imageTooBig"));
+        window.setTimeout(() => setToast(""), 2500);
+        return;
+      }
+      const alt = file.name.replace(/\.[^.]+$/, "").replace(/[[\]]/g, "");
+      insertBlock(v, `![${alt}](${url})`);
+    };
+    input.click();
+  };
 
   const onCmd = async (cmd: Cmd) => {
     const c = await loadCommands();
@@ -196,6 +252,15 @@ export function App() {
     if (w) c.toggleWrap(v, w);
     else if (p) c.toggleLinePrefix(v, p);
     else if (cmd === "link") c.insertLink(v);
+    else if (cmd === "image") pickImage();
+    else if (cmd === "video") {
+      const url = prompt(t(lang, "videoPrompt"))?.trim();
+      if (url) insertBlock(v, `![](${url})`);
+    } else if (cmd === "math") {
+      const sel = v.state.sliceDoc(v.state.selection.main.from, v.state.selection.main.to);
+      if (sel) v.dispatch(v.state.replaceSelection(`$${sel}$`));
+      else insertBlock(v, "$$ E = mc^2 $$");
+    }
     else if (cmd === "hr") c.insertHr(v);
   };
   const panelBtn = (k: PanelKind) => setPanel((p) => (p ? null : k));
@@ -361,7 +426,15 @@ export function App() {
             />
           </div>
         )}
-        <main>
+        <main
+          onContextMenu={(e) => {
+            const v = view.current;
+            if (!v || !(e.target as HTMLElement).closest(".cm-content")) return;
+            e.preventDefault();
+            setCtx({ x: e.clientX, y: e.clientY, pos: v.posAtCoords({ x: e.clientX, y: e.clientY }) ?? v.state.selection.main.head });
+          }}
+          onClick={() => ctx && setCtx(null)}
+        >
           <Suspense fallback={<div className="editor-host" />}>
             <Editor
               docId={`${item.id}:${nonce}:${tick}`}
@@ -372,6 +445,7 @@ export function App() {
               bookLang={bookLangOf(book, lang)}
               onChange={(text) => s.setBody(item.id, text)}
               onSelect={setBubble}
+              at={jumpAt}
               onView={(v) => {
                 view.current = v;
               }}
@@ -389,6 +463,42 @@ export function App() {
           {toast && (
             <div className="toast" role="status">
               {toast}
+            </div>
+          )}
+          {(prev || next) && (
+            <nav className="chapter-nav" aria-label={t(lang, "chapters")}>
+              <button className="icon" disabled={!prev} title={t(lang, "prevChapter")} aria-label={t(lang, "prevChapter")} onClick={() => prev && s.setActive(prev.id)}>
+                <ChevronLeft />
+              </button>
+              <button className="icon" disabled={!next} title={t(lang, "nextChapter")} aria-label={t(lang, "nextChapter")} onClick={() => next && s.setActive(next.id)}>
+                <ChevronRight />
+              </button>
+            </nav>
+          )}
+          {ctx && (
+            <div className="ctx-menu" style={{ left: ctx.x, top: ctx.y }} onMouseLeave={() => setCtx(null)}>
+              <button
+                onClick={() => {
+                  s.patch((st) => ({ books: st.books.map((b) => (b.id === book.id ? { ...b, mark: { item: item.id, pos: ctx.pos } } : b)) }));
+                  setCtx(null);
+                  setToast(t(lang, "bookmarkSet"));
+                  window.setTimeout(() => setToast(""), 1800);
+                }}
+              >
+                <BookmarkIcon size={15} /> {t(lang, "bookmarkSet")}
+              </button>
+              {book.mark && (
+                <button
+                  onClick={() => {
+                    usedMark.current.delete(book.id);
+                    s.setActive(book.mark!.item);
+                    setNonce((n) => n + 1);
+                    setCtx(null);
+                  }}
+                >
+                  <BookmarkCheck size={15} /> {t(lang, "bookmarkGo")}
+                </button>
+              )}
             </div>
           )}
           <div className="status">

@@ -8,6 +8,7 @@ import { toggleWrap } from "./commands";
 import { focusDim, typewriter } from "./focusMode";
 import { type BookLang, htmlLang, isRtl } from "./languages";
 import { livePreview } from "./livePreview";
+import { mediaPreview } from "./media.preview";
 import { markdownSupport } from "./markdown";
 
 interface Props {
@@ -21,6 +22,8 @@ interface Props {
   onSelect?: (at: { x: number; y: number } | null) => void;
   hint: string;
   bookLang: BookLang;
+  /** Put the cursor here when the chapter opens (a bookmark). */
+  at?: number;
 }
 
 // Template guides are Markdown comments; hide the comment markers so only the soft text shows.
@@ -74,13 +77,14 @@ export default function Editor({
   onSelect,
   hint,
   bookLang,
+  at,
 }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const cb = useRef({ onChange, onView, onSelect });
   cb.current = { onChange, onView, onSelect };
-  const initial = useRef({ value, focus, tw, hint, bookLang });
-  initial.current = { value, focus, tw, hint, bookLang };
+  const initial = useRef({ value, focus, tw, hint, bookLang, at });
+  initial.current = { value, focus, tw, hint, bookLang, at };
 
   useEffect(() => {
     const parent = host.current;
@@ -102,6 +106,7 @@ export default function Editor({
           syntaxHighlighting(mdStyle),
           hideGuideMarks,
           livePreview,
+          mediaPreview,
           focusSlot.of(initial.current.focus ? focusDim : []),
           typeSlot.of(initial.current.tw ? typewriter : []),
           EditorView.lineWrapping,
@@ -120,6 +125,9 @@ export default function Editor({
     view.current = v;
     cb.current.onView(v);
     v.focus();
+    const start = initial.current.at;
+    if (start !== undefined && start <= v.state.doc.length)
+      v.dispatch({ selection: { anchor: start }, effects: EditorView.scrollIntoView(start, { y: "center" }) });
     return () => {
       cb.current.onView(null);
       v.destroy();
