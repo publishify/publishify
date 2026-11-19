@@ -197,6 +197,14 @@ let running = false;
 let rerun = false;
 let timer = 0;
 
+/**
+ * Signed in to an account, the account is the one sync between devices and Drive is a backup:
+ * everything is written to Drive, nothing is read back. Two syncs carrying the same text by
+ * different paths would otherwise keep creating conflicted copies. Without an account, Drive syncs
+ * both ways.
+ */
+const backupOnly = (): boolean => !!useStore.getState().account;
+
 export function scheduleDrive(delay = 4000): void {
   window.clearTimeout(timer);
   timer = window.setTimeout(() => void driveSync(), delay);
@@ -235,9 +243,9 @@ export async function driveSync(): Promise<void> {
     const rootId = roots[0]?.id ?? (await createFolder("Publishify", null, { pfRoot: rootTag })).id;
     sameLibrary();
     const folders = await list(`'${rootId}' in parents and mimeType='${FOLDER}' and trashed=false`);
-    // 3) fetch books that are on Drive but not here
+    // 3) fetch books that are on Drive but not here (not in backup mode: the account brings them)
     const known = new Set(useStore.getState().books.map((b) => b.id));
-    const fresh = folders.filter((f) => f.appProperties?.pfBook && !known.has(f.appProperties.pfBook));
+    const fresh = backupOnly() ? [] : folders.filter((f) => f.appProperties?.pfBook && !known.has(f.appProperties.pfBook));
     if (fresh.length) {
       useStore.getState().patch((s) => ({
         books: [...s.books, ...fresh.map((f): Book => ({
@@ -266,6 +274,7 @@ interface Replace { id: string; expect: string; body: string; link: DriveLink; c
 async function syncBook(bookId: string, rootId: string, folders: DFile[], sameLibrary: () => void): Promise<void> {
   const snap = getBook(bookId);
   if (!snap) return;
+  const backup = backupOnly();
   let folder = folders.find((f) => f.id === snap.drive?.folderId) ?? folders.find((f) => f.appProperties?.pfBook === snap.id);
   if (!folder) {
     folder = await createFolder(clean(snap.title) || "Kitap", rootId, { pfBook: snap.id });
@@ -302,13 +311,14 @@ async function syncBook(bookId: string, rootId: string, folders: DFile[], sameLi
       uploaded.add(c.id);
     };
     if (!f) {
-      if (l && !noRemote && h === l.hash) removes.set(c.id, h); // deleted on Drive, unchanged here
+      if (l && !noRemote && !backup && h === l.hash) removes.set(c.id, h); // deleted on Drive, unchanged here
       else await put(null);
       continue;
     }
     const remoteChanged = !l || l.fileId !== f.id || l.version !== f.version;
     const localChanged = !l || h !== l.hash;
     if (!remoteChanged && !localChanged) continue;
+    if (backup) { await put(f.id); continue; } // backup: this computer's text wins on Drive
     if (!remoteChanged) { await put(f.id); continue; }
     const text = await download(f.id);
     const link: DriveLink = { fileId: f.id, version: f.version, hash: hashStr(text) };
@@ -322,7 +332,7 @@ async function syncBook(bookId: string, rootId: string, folders: DFile[], sameLi
     }
   }
   // Chapters that are on Drive but not here
-  for (const [id, f] of byId) {
+  for (const [id, f] of backup ? [] : byId) {
     if (chapters.some((c) => c.id === id)) continue;
     const text = await download(f.id);
     adds.push({
@@ -347,7 +357,7 @@ async function syncBook(bookId: string, rootId: string, folders: DFile[], sameLi
   let metaVersion = dm?.metaVersion;
   if (metaFile) {
     const remoteChanged = !dm || dm.metaFileId !== metaFile.id || dm.metaVersion !== metaFile.version;
-    if (remoteChanged && !localMetaChanged) { applyMeta = parseMeta(await download(metaFile.id)); metaVersion = metaFile.version; }
+    if (remoteChanged && !localMetaChanged && !backup) { applyMeta = parseMeta(await download(metaFile.id)); metaVersion = metaFile.version; }
   }
 
   sameLibrary(); // nothing read from Drive may land in a library that was switched meanwhile
