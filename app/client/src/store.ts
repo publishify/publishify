@@ -55,6 +55,11 @@ export interface DriveLink {
   hash: string;
 }
 export const CONFLICT = "__conflict__";
+/** A note (characters, places, research): a chapter marked in the title field, like a conflicted copy, so it syncs everywhere unchanged. Notes are never counted or exported with the book unless asked. */
+export const NOTE = "__note__";
+export const isNote = (i: Pick<Item, "kind" | "title">) => i.kind === "chapter" && i.title === NOTE;
+/** The book's own text: everything except notes. */
+export const bookItems = (b: Book): Item[] => live(b).filter((i) => !isNote(i));
 /** Are there unsynced changes? (for old records without the field: yes if never synced) */
 export const isDirty = (i: Item) => i.dirty ?? i.seq === undefined;
 export type Genre = "roman" | "novella" | "hikaye" | "diger";
@@ -150,7 +155,7 @@ interface State extends Persisted {
   purgeBook(id: string): void;
   emptyBookTrash(): void;
   setActive(itemId: string): void;
-  addItem(kind: "part" | "chapter" | "scene"): void;
+  addItem(kind: "part" | "chapter" | "scene" | "note"): void;
   renameItem(id: string, title: string): void;
   setLevel(id: string, scene: boolean): void;
   trashItem(id: string): void;
@@ -486,7 +491,9 @@ export const useStore = create<State>((setS, getS) => {
           ? mkItem("part", t(lang, "newPart"))
           : kind === "scene"
             ? { ...mkItem("chapter", "", ""), level: 2 }
-            : mkItem(
+            : kind === "note"
+              ? mkItem("chapter", NOTE, `# ${t(lang, "newNote")}\n\n`)
+              : mkItem(
                 "chapter",
                 "",
                 `# ${t(lang, "newChapter")}\n\n`,

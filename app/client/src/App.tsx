@@ -27,7 +27,7 @@ import { Panel, type PanelKind } from "./Panel";
 import { Sidebar } from "./Sidebar";
 import { Toolbar, type Cmd } from "./Toolbar";
 import { isRtlUi, t } from "./i18n";
-import { activeBook, titleOf, useStore, wordCount } from "./store";
+import { activeBook, titleOf, useStore, wordCount, bookItems } from "./store";
 
 const Editor = lazy(() => import("./Editor"));
 const loadCommands = () => import("./commands");
@@ -169,9 +169,7 @@ export function App() {
   if (!s.ready) return <div className="loading">…</div>;
   if (!book || !item) return <Library lang={lang} />;
 
-  const bookWords = book.items
-    .filter((i) => !i.trashed)
-    .reduce((n, i) => n + wordCount(i.body), 0);
+  const bookWords = bookItems(book).reduce((n, i) => n + wordCount(i.body), 0);
 
   const onCmd = async (cmd: Cmd) => {
     const c = await loadCommands();

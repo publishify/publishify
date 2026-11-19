@@ -23,12 +23,12 @@ import { NewBookDialog } from "./NewBookDialog";
 import { themeOrder } from "./themes";
 import { LibraryTrash } from "./Trash";
 import { type Lang, t, uiLangs } from "./i18n";
-import { type Book, live, useStore, wordCount } from "./store";
+import { type Book, bookItems, useStore, wordCount } from "./store";
 const genreIcon = { roman: BookMarked, novella: Feather, hikaye: ScrollText, diger: NotebookPen } as const;
 
 /** Where the writer left off: the last sentence of the chapter edited most recently. */
 export function lastLine(book: Book): string {
-  const ch = live(book)
+  const ch = bookItems(book)
     .filter((i) => i.kind === "chapter" && i.body.trim())
     .sort((a, b) => b.updated - a.updated)[0];
   if (!ch) return "";
@@ -66,7 +66,7 @@ export function Library({ lang }: { lang: Lang }) {
   const [acct, setAcct] = useState(false);
   const account = useStore((x) => x.account);
   const status = useStore((x) => x.sync.status);
-  const words = (b: Book) => live(b).reduce((n, i) => n + wordCount(i.body), 0);
+  const words = (b: Book) => bookItems(b).reduce((n, i) => n + wordCount(i.body), 0);
   return (
     <div className="library workspace-library">
       <div className="drag-strip" data-tauri-drag-region />
@@ -189,7 +189,7 @@ export function Library({ lang }: { lang: Lang }) {
                 <div className="meta">
                   <span>
                     {words(b).toLocaleString(lang)} {t(lang, "words")} ·{" "}
-                    {live(b).filter((i) => i.kind === "chapter").length}{" "}
+                    {bookItems(b).filter((i) => i.kind === "chapter").length}{" "}
                     {t(lang, "chapters")}
                   </span>
                   <span>

@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Search,
+  StickyNote,
   Volume2,
   X,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { ItemTrash } from "./Trash";
 import {
   type Book,
   CONFLICT,
+  isNote,
   activeBook,
   hasScenes,
   live,
@@ -69,7 +71,7 @@ export function Sidebar({
 
   const rows = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase(lang);
-    const items = live(book);
+    const items = live(book).filter((i) => !isNote(i));
     let partHidden = false;
     let chapterHidden = false;
     let inPart = false;
@@ -119,6 +121,7 @@ export function Sidebar({
     for (const i of live(book)) if (i.kind === "chapter" && i.level !== 2 && i.title !== CONFLICT) m.set(i.id, ++n);
     return m;
   }, [book]);
+  const notes = live(book).filter((i) => isNote(i) && (!q || i.body.toLocaleLowerCase(lang).includes(q.trim().toLocaleLowerCase(lang))));
   const copies = live(book).filter((i) => i.kind === "chapter" && i.title === CONFLICT).length;
 
   const toggle = (id: string) =>
@@ -365,6 +368,22 @@ export function Sidebar({
                 <X />
               </button>
             </span>
+          </div>
+        ))}
+        <div className="notes-head">
+          <span>{t(lang, "notes")}</span>
+          <button className="icon" title={t(lang, "newNote")} aria-label={t(lang, "newNote")} onClick={() => addItem("note")}>
+            <Plus />
+          </button>
+        </div>
+        {notes.map((n) => (
+          <div
+            key={n.id}
+            className={`row chapter note ${n.id === book.activeId ? "active" : ""}`}
+            onClick={() => (setActive(n.id), onPick?.())}
+          >
+            <StickyNote />
+            <span className="name">{titleOf(n, t(lang, "untitled"))}</span>
           </div>
         ))}
         {copies > 0 && !q && (

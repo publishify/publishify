@@ -1,3 +1,4 @@
+import { isNote } from "./store";
 import DOMPurify from "dompurify";
 import { strToU8, zipSync } from "fflate";
 import { marked } from "marked";
@@ -103,10 +104,25 @@ async function bodyHtml(book: Book): Promise<string> {
   return parts.join("\n");
 }
 
+export type ExportScope = "book" | "with" | "notes";
+
+/** What goes into the file: the book, the book followed by its notes, or the notes alone. */
+export function scoped(book: Book, scope: ExportScope, notesTitle = "Notes"): Book {
+  const notes = book.items.filter((i) => !i.trashed && isNote(i));
+  const text = book.items.filter((i) => !isNote(i));
+  if (scope === "notes") return { ...book, items: notes };
+  if (scope === "with" && notes.length)
+    return { ...book, items: [...text, { id: "notes", kind: "part", title: notesTitle, body: "", updated: 0, versions: [] }, ...notes] };
+  return { ...book, items: text };
+}
+
 export async function exportBook(
-  book: Book,
+  whole: Book,
   kind: "md" | "html" | "docx" | "epub" | "pdf",
+  scope: ExportScope = "book",
+  notesTitle?: string,
 ) {
+  const book = scoped(whole, scope, notesTitle);
   const name = slug(book.title);
   if (kind === "md")
     return download(`${name}.md`, toMarkdown(book), "text/markdown");
