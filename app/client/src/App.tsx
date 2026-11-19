@@ -2,18 +2,14 @@ import { copyLang } from "./i18n/fallback";
 import { syncCopy } from "./i18n/sync";
 import type { EditorView } from "@codemirror/view";
 import {
-  Download,
+  ChevronLeft,
   Eye,
-  History,
   Keyboard,
   Maximize,
   Minimize,
   Link2,
   Type,
-  Library as LibraryIcon,
-  Moon,
   PanelRight,
-  Sun,
 } from "lucide-react";
 import { AccountDialog, AccountIcon } from "./Account";
 import { DesktopApprove } from "./DesktopApprove";
@@ -25,7 +21,6 @@ import {
 import { bookLangOf, langInfo } from "./languages";
 import { startSync } from "./sync";
 import { startDrive, useDrive } from "./drive";
-import { themeOrder } from "./themes";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Library } from "./Library";
 import { Panel, type PanelKind } from "./Panel";
@@ -36,7 +31,6 @@ import { activeBook, titleOf, useStore, wordCount } from "./store";
 
 const Editor = lazy(() => import("./Editor"));
 const loadCommands = () => import("./commands");
-const loadExport = () => import("./export");
 
 const wide = () => window.matchMedia("(min-width: 861px)").matches;
 
@@ -69,7 +63,6 @@ export function App() {
     window.addEventListener("keydown", key);
     return () => { window.removeEventListener("mousemove", move); window.removeEventListener("keydown", key); };
   }, []);
-  const [menu, setMenu] = useState(false);
   const [full, setFull] = useState(
     () =>
       import.meta.env.DEV &&
@@ -179,8 +172,6 @@ export function App() {
   const bookWords = book.items
     .filter((i) => !i.trashed)
     .reduce((n, i) => n + wordCount(i.body), 0);
-  const nextTheme =
-    themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length]!;
 
   const onCmd = async (cmd: Cmd) => {
     const c = await loadCommands();
@@ -208,10 +199,6 @@ export function App() {
     else if (cmd === "link") c.insertLink(v);
     else if (cmd === "hr") c.insertHr(v);
   };
-  const run = async (k: "md" | "html" | "docx" | "epub" | "pdf") => {
-    setMenu(false);
-    (await loadExport()).exportBook(book, k).catch(console.error);
-  };
   const panelBtn = (k: PanelKind) => setPanel((p) => (p ? null : k));
 
   return (
@@ -224,53 +211,11 @@ export function App() {
           title={`${t(lang, "library")} (⌘⇧L)`}
           onClick={() => s.openBook(null)}
         >
+          <ChevronLeft className="title-back" aria-hidden="true" />
           {book.title || t(lang, "untitled")}
           <span className="title-chapter"> · {titleOf(item, t(lang, "untitled"))}</span>
         </button>
         <span className="spacer" />
-        <button
-          className="icon"
-          title={`${t(lang, "library")} (⌘⇧L)`}
-          aria-label={t(lang, "library")}
-          onClick={() => s.openBook(null)}
-        >
-          <LibraryIcon />
-        </button>
-        <button
-          className="icon"
-          aria-pressed={panel === "history"}
-          title={t(lang, "history")}
-          aria-label={t(lang, "history")}
-          onClick={() => setPanel((p) => (p === "history" ? null : "history"))}
-        >
-          <History />
-        </button>
-        <div style={{ position: "relative" }}>
-          <button
-            className="icon"
-            title={t(lang, "export")}
-            onClick={() => setMenu((m) => !m)}
-          >
-            <Download />
-          </button>
-          {menu && (
-            <div className="pop">
-              <button onClick={() => void run("md")}>{t(lang, "expMd")}</button>
-              <button onClick={() => void run("html")}>
-                {t(lang, "expHtml")}
-              </button>
-              <button onClick={() => void run("docx")}>
-                {t(lang, "expDocx")}
-              </button>
-              <button onClick={() => void run("epub")}>
-                {t(lang, "expEpub")}
-              </button>
-              <button onClick={() => void run("pdf")}>
-                {t(lang, "expPdf")}
-              </button>
-            </div>
-          )}
-        </div>
         <button
           className="icon"
           title={t(lang, "account")}
@@ -303,16 +248,9 @@ export function App() {
         </button>
         <button
           className="icon"
-          title={t(lang, "theme")}
-          onClick={() => s.setSettings({ theme: nextTheme })}
-        >
-          {theme === "dark" ? <Sun /> : <Moon />}
-        </button>
-        <button
-          className="icon"
           aria-pressed={!!panel}
           title={t(lang, "panelToggle")}
-          onClick={() => panelBtn("board")}
+          onClick={() => panelBtn("publish")}
         >
           <PanelRight />
         </button>

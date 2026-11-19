@@ -1,5 +1,5 @@
 import { BoardPanel } from "./BoardPanel";
-import { Globe, History, Settings, Sparkles, Target } from "lucide-react";
+import { Globe, History, Settings, Target } from "lucide-react";
 import { PublishTab } from "./PublishTab";
 import { type Lang, t, uiLangs } from "./i18n";
 import { type Item, type Theme, useStore, wordCount } from "./store";
@@ -12,7 +12,6 @@ export const panelTabs: {
   icon: typeof History;
   label: "board" | "publish" | "history" | "stats" | "settings";
 }[] = [
-  { id: "board", icon: Sparkles, label: "board" },
   { id: "publish", icon: Globe, label: "publish" },
   { id: "history", icon: History, label: "history" },
   { id: "stats", icon: Target, label: "stats" },
@@ -59,8 +58,12 @@ export function Panel({
         ))}
       </div>
       <div className="pbody">
-        {kind === "board" && <BoardPanel />}
-        {kind === "publish" && <PublishTab lang={lang} />}
+        {(kind === "publish" || kind === "board") && (
+          <>
+            <PublishTab lang={lang} />
+            <BoardPanel />
+          </>
+        )}
         {kind === "history" && (
           <>
             <h3>{t(lang, "history")}</h3>

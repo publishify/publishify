@@ -1016,3 +1016,8 @@ main .status {
     drop-shadow(0 1px 0 color-mix(in srgb, white 55%, transparent))
     drop-shadow(0 -1px 0 color-mix(in srgb, var(--ink) 12%, transparent));
 }
+
+/* Back to the library: a chevron in front of the book title, as in Apple's own apps. */
+.titlebar .title { display: inline-flex; align-items: center; gap: 4px; }
+.titlebar .title .title-back { width: 16px; height: 16px; color: var(--muted); margin-inline-start: -4px; transition: transform .15s; }
+.titlebar .title:hover .title-back { transform: translateX(-2px); color: var(--ink); }
