@@ -14,7 +14,7 @@ it("keeps restore available after the last visible book is trashed", async () =>
   try {
     await act(async () => root.render(createElement(Library, { lang: "en" })));
     const button = (name: string) => [...host.querySelectorAll("button")].find((b) => b.textContent?.trim() === name);
-    const openBook = host.querySelector<HTMLButtonElement>(".book-open");
+    const openBook = host.querySelector<HTMLButtonElement>(".book-continue");
     expect(openBook?.textContent).toContain("Continue");
     await act(async () => useStore.getState().openBook(null));
     await act(async () => openBook!.click());

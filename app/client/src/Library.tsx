@@ -4,7 +4,11 @@ import { workspace } from "./i18n/workspace";
 import { readImport } from "./import";
 import { importCopy } from "./i18n/import";
 import {
+  BookMarked,
   BookOpen,
+  Feather,
+  NotebookPen,
+  ScrollText,
   Moon,
   Pencil,
   Plus,
@@ -19,8 +23,22 @@ import { NewBookDialog } from "./NewBookDialog";
 import { LibraryTrash } from "./Trash";
 import { type Lang, t, uiLangs } from "./i18n";
 import { type Book, live, useStore, wordCount } from "./store";
+const genreIcon = { roman: BookMarked, novella: Feather, hikaye: ScrollText, diger: NotebookPen } as const;
+
+/** Where the writer left off: the last sentence of the chapter edited most recently. */
+export function lastLine(book: Book): string {
+  const ch = live(book)
+    .filter((i) => i.kind === "chapter" && i.body.trim())
+    .sort((a, b) => b.updated - a.updated)[0];
+  if (!ch) return "";
+  const para = ch.body.split("\n").map((l) => l.trim()).filter((l) => l && !/^[#>\-*]/.test(l)).pop() ?? "";
+  const s = para.split(/(?<=[.!?…])\s+/).filter(Boolean).pop() ?? "";
+  return s.length > 110 ? `…${s.slice(-108)}` : s;
+}
+
 function Cover({ book }: { book: Book }) {
   const { url } = useBlobUrl(book.cover);
+  const Icon = genreIcon[book.genre ?? "roman"] ?? BookMarked;
   return (
     <div
       className={`cover ${url ? "has-img" : ""}`}
@@ -29,6 +47,7 @@ function Cover({ book }: { book: Book }) {
       aria-label={book.title}
     >
       <strong>{book.title}</strong>
+      {!url && <Icon className="cover-icon" aria-hidden="true" />}
       <small>{book.author}</small>
     </div>
   );
@@ -160,8 +179,12 @@ export function Library({ lang }: { lang: Lang }) {
                   onClick={() => openBook(b.id)}
                 >
                   <Cover book={b} />
-                  <span className="book-continue">{w.continue}</span>
                 </button>
+                <div className="book-info">
+                <h3>{b.title || t(lang, "untitled")}</h3>
+                {b.author && <p className="book-author">{b.author}</p>}
+                {lastLine(b) && <p className="book-last">“{lastLine(b)}”</p>}
+                <button className="book-continue" onClick={() => openBook(b.id)}>{w.continue} →</button>
                 <div className="meta">
                   <span>
                     {words(b).toLocaleString(lang)} {t(lang, "words")} ·{" "}
@@ -193,6 +216,7 @@ export function Library({ lang }: { lang: Lang }) {
                       {t(lang, "del")}
                     </button>
                   </span>
+                </div>
                 </div>
               </article>
             ))}
