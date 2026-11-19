@@ -20,6 +20,7 @@ import { Logo } from "./Logo";
 import { BookDialog } from "./BookDialog";
 import { useBlobUrl } from "./media";
 import { NewBookDialog } from "./NewBookDialog";
+import { themeOrder } from "./themes";
 import { LibraryTrash } from "./Trash";
 import { type Lang, t, uiLangs } from "./i18n";
 import { type Book, live, useStore, wordCount } from "./store";
@@ -126,7 +127,7 @@ export function Library({ lang }: { lang: Lang }) {
           aria-label={w.theme}
           title={w.theme}
           onClick={() =>
-            setSettings({ theme: theme === "dark" ? "light" : "dark" })
+            setSettings({ theme: themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length]! })
           }
         >
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}

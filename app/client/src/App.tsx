@@ -6,6 +6,7 @@ import {
   Eye,
   History,
   Keyboard,
+  Maximize,
   Minimize,
   Link2,
   Type,
@@ -279,6 +280,18 @@ export function App() {
             status={drive === "syncing" ? "syncing" : s.sync.status}
             signedIn={!!s.account || drive !== "off"}
           />
+        </button>
+        <button
+          className="icon"
+          title={t(lang, "fullscreen")}
+          aria-label={t(lang, "fullscreen")}
+          onClick={() =>
+            document.fullscreenElement
+              ? void document.exitFullscreen()
+              : void document.documentElement.requestFullscreen()
+          }
+        >
+          <Maximize />
         </button>
         <button
           className="icon"
